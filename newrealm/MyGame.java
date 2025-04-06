@@ -32,6 +32,7 @@ public class MyGame extends VariableFrameRateGame
 	private float disarmDistance = 3.5f;
 	private float warningDistance = 6.0f;
 	private float detonationDistance = 4.0f;
+	private float height = 0.0f;
 
 	private String broadcastMessage = "";
 
@@ -44,12 +45,22 @@ public class MyGame extends VariableFrameRateGame
 	private Vector3f hudYellowColor = new Vector3f(1.0f, 0.729f, 0.0f);
 	private Vector3f hudRedColor = new Vector3f(1, 0, 0);
 	private Vector3f hudColor = hudWhiteColor;
+	private Vector3f loc;
 
 	private ManualCube manualCubeS;
 
-	private GameObject dol, sphere_sat, cube_sat, torus_sat, lineX, lineY, lineZ, manualCube, floor, spaceText, wireR, wireG, wireB;
-	private ObjShape dolS, sphereS, cubeS, torusS, lineSx, lineSy, lineSz, floorS, spaceTextS, wireS;
-	private TextureImage doltx, spheretx, s_safetx, s_disarmtx, cubetx, c_safetx, c_disarmtx, torustx, t_safetx, t_disarmtx, linetx, manualCubetx, floortx, detonatedtx, spaceTexttx, wireRtx, wireGtx, wireBtx;
+	private GameObject dol, sphere_sat, 
+	cube_sat, torus_sat, lineX, lineY, lineZ, 
+	manualCube, floor, spaceText, wireR, wireG, wireB,
+	chamber;
+
+	private ObjShape dolS, sphereS, cubeS, torusS, lineSx, 
+	lineSy, lineSz, ghoulHead, floorS, spaceTextS, wireS, chamberS;
+
+	private TextureImage doltx, spheretx, s_safetx, s_disarmtx, 
+	cubetx, c_safetx, c_disarmtx, torustx, t_safetx, t_disarmtx, 
+	linetx, manualCubetx, floortx, floorheightmap, detonatedtx, 
+	spaceTexttx, wireRtx, wireGtx, wireBtx, chambertx;
 
 	private Light light1, light2, light3, enemyLight;
 
@@ -73,14 +84,17 @@ public class MyGame extends VariableFrameRateGame
 	public void loadShapes()
 	{	
 		dolS = new ImportedModel("dolphinHighPoly.obj");
+
 		sphereS = new Sphere();
 		cubeS = new Cube();
 		torusS = new Torus();
-		manualCubeS = new ManualCube();
-		floorS = new Plane();
+		ghoulHead = new ImportedModel("GHOUL.obj");
+		floorS = new TerrainPlane(1000);
 
 		//Custom space text for after disarms
 		spaceTextS = new ImportedModel("spacetext.obj");
+
+		chamberS = new ImportedModel("Chamber.obj");
 
 		//Satellite wire shape
 		wireS = new ImportedModel("wire.obj");
@@ -109,13 +123,16 @@ public class MyGame extends VariableFrameRateGame
 		t_disarmtx = new TextureImage("Torus_Disarmed.png");
 
 		floortx = new TextureImage("ground.jpg");
+		floorheightmap = new TextureImage("floorheightmap.jpg");
 		detonatedtx = new TextureImage("detonated.png");
 
 		linetx = new TextureImage("line.png");
 
-		manualCubetx = new TextureImage("ManualCube.png");
+		manualCubetx = new TextureImage("GHOUL.jpg");
 
 		spaceTexttx = new TextureImage("whiteText.png");
+
+		chambertx = new TextureImage("Chamber.jpg");
 
 		wireRtx = new TextureImage("wireR.png");
 		wireGtx = new TextureImage("wireG.png");
@@ -146,9 +163,11 @@ public class MyGame extends VariableFrameRateGame
 
 		floor = new GameObject(GameObject.root(), floorS, floortx);
 
-		manualCube = new GameObject(GameObject.root(), manualCubeS, manualCubetx);
+		manualCube = new GameObject(GameObject.root(), ghoulHead, manualCubetx);
 
 		spaceText = new GameObject(GameObject.root(), spaceTextS, spaceTexttx);
+
+		chamber = new GameObject(GameObject.root(), chamberS, chambertx);
 
 		//Satellite wires
 		wireR = new GameObject(torus_sat, wireS, wireRtx);
@@ -184,13 +203,20 @@ public class MyGame extends VariableFrameRateGame
 		torus_sat.setLocalScale((new Matrix4f()).scaling(0.9f));
 
 		manualCube.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
-		manualCube.setLocalScale((new Matrix4f()).scaling(0.25f));
+		manualCube.setLocalScale((new Matrix4f()).scaling(50f));
 
 		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
 		floor.setLocalScale((new Matrix4f()).scaling(25f));
+		floor.setHeightMap(floorheightmap);
+		floor.getRenderStates().setTiling(1);
+		floor.getRenderStates().setTileFactor(10);
 
 		spaceText.setLocalTranslation((new Matrix4f()).translation(0f, 2f, 0f));
 		spaceText.setLocalScale((new Matrix4f()).scaling(0.2f));
+
+		chamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		chamber.setLocalScale((new Matrix4f()).scaling(8f));
+		chamber.getRenderStates().setRenderHiddenFaces(true);;
 	}
 
 	@Override
@@ -279,6 +305,8 @@ public class MyGame extends VariableFrameRateGame
 
 		rc.enable();
 		bc.enable();
+
+		rc.addTarget(chamber);
 	}
 
 	@Override
@@ -301,6 +329,11 @@ public class MyGame extends VariableFrameRateGame
 			//Dolpin cannot go beneath the Y level of the floor plane
 			if (dol.getWorldLocation().y() < floor.getWorldLocation().y())
 				dol.setLocalLocation((dol.getWorldLocation().mul(new Vector3f(1f, 0f, 1f))).add(new Vector3f(0f, -1f, 0f)));
+
+			//Set dolphin to height of height map to make them go over the peaks
+			loc = dol.getWorldLocation();
+			height = floor.getHeight(loc.x(), loc.z());
+			dol.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
 
 			//Enemy ManualCube continues to look towards and follow the camera
 			manualCube.lookAt(dol.getWorldLocation());
