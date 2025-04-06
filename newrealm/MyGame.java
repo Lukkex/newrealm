@@ -1,6 +1,4 @@
-/* Hunter Brown, Prof. Gordon, CSC 165, Feb. 15 2025 */
-
-package a2;
+package newrealm;
 
 import tage.*;
 import tage.shapes.*;
@@ -19,6 +17,8 @@ public class MyGame extends VariableFrameRateGame
 {
 	private static Engine engine;
 	private InputManager im;
+
+	private int fluffyClouds; //skyboxes
 
 	private boolean hasWon, gameOver, isOnDolphin, sphereDisarmed, cubeDisarmed, torusDisarmed, isDisarming, callOnce = false;
 	private boolean worldAxisOn = true;
@@ -120,7 +120,14 @@ public class MyGame extends VariableFrameRateGame
 		wireRtx = new TextureImage("wireR.png");
 		wireGtx = new TextureImage("wireG.png");
 		wireBtx = new TextureImage("wireB.png");
-	}	
+	}
+
+	@Override
+	public void loadSkyBoxes() {
+		fluffyClouds = (engine.getSceneGraph()).loadCubeMap("fluffyClouds");
+		(engine.getSceneGraph()).setActiveSkyBoxTexture(fluffyClouds);
+		(engine.getSceneGraph()).setSkyBoxEnabled(true);
+	}
 
 	@Override
 	public void buildObjects(){	

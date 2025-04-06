@@ -1,22 +1,22 @@
-package a2;
+package newrealm;
 
+import org.joml.*;
 import tage.GameObject;
+import tage.Camera;
 import tage.input.action.*;
 import net.java.games.input.Event;
 
-public class TurnAction extends AbstractInputAction{
+public class DisarmAction extends AbstractInputAction{
     private MyGame game;
     private GameObject obj;
-    private float turnSpeed;
 
-    public TurnAction(MyGame g, float speed){
+    public DisarmAction(MyGame g){
         game = g;
-        turnSpeed = speed;
     }
 
     @Override
     public void performAction(float time, Event e){
         obj = game.getAvatar();
-        obj.yaw(turnSpeed * e.getValue());
+        game.setDisarming(true);
     }
 }

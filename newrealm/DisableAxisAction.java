@@ -1,4 +1,4 @@
-package a2;
+package newrealm;
 
 import tage.input.action.*;
 import net.java.games.input.Event;

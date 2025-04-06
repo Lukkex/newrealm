@@ -1,22 +1,22 @@
-package a2;
+package newrealm;
 
 import tage.GameObject;
 import tage.input.action.*;
 import net.java.games.input.Event;
 
-public class PitchAction extends AbstractInputAction{
+public class MoveAction extends AbstractInputAction{
     private MyGame game;
     private GameObject obj;
-    private float pitchSpeed;
+    private float movementSpeed;
 
-    public PitchAction(MyGame g, float speed){
+    public MoveAction(MyGame g, float speed){
         game = g;
-        pitchSpeed = speed;
+        movementSpeed = speed;
     }
 
     @Override
     public void performAction(float time, Event e){
         obj = game.getAvatar();
-        obj.pitch(pitchSpeed * e.getValue());
+        obj.move(movementSpeed * e.getValue());
     }
 }
