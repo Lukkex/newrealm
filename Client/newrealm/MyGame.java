@@ -15,12 +15,18 @@ import tage.input.*;
 import tage.input.action.*;
 import tage.networking.IGameConnection.ProtocolType;
 import tage.nodeControllers.*;
+import java.util.Scanner;
 
 public class MyGame extends VariableFrameRateGame
 {
 	private static Engine engine;
 	private InputManager im;
 	private GhostManager gm;
+
+	private Scanner scan = new Scanner(System.in);
+
+	private final String DEFAULT_IP_ADDRESS = "192.168.1.19";
+	private final int DEFAULT_PORT_NUMBER = 6010;
 
 	private int fluffyClouds; //skyboxes
 
@@ -81,6 +87,32 @@ public class MyGame extends VariableFrameRateGame
 
 	public MyGame(){
 		super();
+		try {
+			gm = new GhostManager(this);
+
+			System.out.println("\nIP Address (Enter for default - " + DEFAULT_IP_ADDRESS + "): ");
+			String address = scan.nextLine();
+
+			if (address.equals("")) this.serverAddress = DEFAULT_IP_ADDRESS;
+			else this.serverAddress = address;
+
+			System.out.println("\nPort Number (Enter for default - " + DEFAULT_PORT_NUMBER + "): ");
+			String port = scan.nextLine();
+
+			if (port.equals("")) this.serverPort = DEFAULT_PORT_NUMBER;
+			else this.serverPort = Integer.parseInt(port);
+
+			System.out.println("\nProtocol [UDP/TCP] (Enter for default - UDP): ");
+			String protocol = scan.nextLine();
+
+			if (protocol.toUpperCase().compareTo("TCP") == 0)
+				this.serverProtocol = ProtocolType.TCP;
+			else
+				this.serverProtocol = ProtocolType.UDP;
+		}
+		catch (Exception f){
+			System.out.println("\nInvalid parameters for network connection.\n\nIP, Port, Protocol (TCP | UDP)\n");
+		}
 	}
 
 	public MyGame(String serverAddress, int serverPort, String protocol){ 
@@ -94,8 +126,15 @@ public class MyGame extends VariableFrameRateGame
 			this.serverProtocol = ProtocolType.UDP;
 	}
 
-	public static void main(String[] args)
-	{	MyGame game = new MyGame(args[0], Integer.parseInt(args[1]), args[2]);
+	public static void main(String[] args){	
+		MyGame game;
+
+		//If parameters passed in through terminal / batch file, skip the prompts
+		if (args.length == 3 && args[0] != null && args[1] != null && args[2] != null && args.length < 4)
+			game = new MyGame(args[0], Integer.parseInt(args[1]), args[2]);
+		else
+			game = new MyGame();
+
 		engine = new Engine(game);
 		game.initializeSystem();
 		game.game_loop();
@@ -362,7 +401,7 @@ public class MyGame extends VariableFrameRateGame
 
 			//Enemy ManualCube continues to look towards and follow the camera
 			manualCube.lookAt(dol.getWorldLocation());
-			manualCube.move(0.01f);
+			//manualCube.move(0.01f);
 			enemyLight.setLocation(manualCube.getWorldLocation());
 			
 			//Enemy light is always inside of enemy cube, and will flicker based on the elapsed time
