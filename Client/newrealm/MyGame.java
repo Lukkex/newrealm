@@ -30,7 +30,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private int fluffyClouds; //skyboxes
 
-	private boolean hasWon, gameOver, isOnDolphin, sphereDisarmed, cubeDisarmed, torusDisarmed, isDisarming, callOnce = false;
+	private boolean hasWon, gameOver, sphereDisarmed, cubeDisarmed, torusDisarmed, isDisarming, callOnce = false;
 	private boolean worldAxisOn = true;
 
 	private double lastFrameTime, currFrameTime, elapsTime;
@@ -57,19 +57,17 @@ public class MyGame extends VariableFrameRateGame
 	private Vector3f hudColor = hudWhiteColor;
 	private Vector3f loc;
 
-	private ManualCube manualCubeS;
-
-	private GameObject dol, sphere_sat, 
+	private GameObject avatar, sphere_sat, 
 	cube_sat, torus_sat, lineX, lineY, lineZ, 
-	manualCube, floor, spaceText, wireR, wireG, wireB,
+	enemy, floor, spaceText, wireR, wireG, wireB,
 	chamber;
 
-	private ObjShape dolS, ghostS, sphereS, cubeS, torusS, lineSx, 
-	lineSy, lineSz, ghoulHead, floorS, spaceTextS, wireS, chamberS;
+	private ObjShape avatarS, ghostS, sphereS, cubeS, torusS, lineSx, 
+	lineSy, lineSz, enemyS, floorS, spaceTextS, wireS, chamberS;
 
-	private TextureImage doltx, ghosttx, spheretx, s_safetx, s_disarmtx, 
+	private TextureImage avatartx, ghosttx, spheretx, s_safetx, s_disarmtx, 
 	cubetx, c_safetx, c_disarmtx, torustx, t_safetx, t_disarmtx, 
-	linetx, manualCubetx, floortx, floorheightmap, detonatedtx, 
+	linetx, enemytx, floortx, floorheightmap, detonatedtx, 
 	spaceTexttx, wireRtx, wireGtx, wireBtx, chambertx;
 
 	private Light light1, light2, light3, enemyLight;
@@ -143,12 +141,12 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	
-		dolS = new ImportedModel("dolphinHighPoly.obj");
-		ghostS = new Sphere();
+		avatarS = new ImportedModel("DolphinHighPoly.obj");
+		ghostS = new ImportedModel("GHOULhead.obj");
 		sphereS = new Sphere();
 		cubeS = new Cube();
 		torusS = new Torus();
-		ghoulHead = new ImportedModel("GHOUL.obj");
+		enemyS = new ImportedModel("GHOUL.obj");
 		floorS = new TerrainPlane(1000);
 
 		//Custom space text for after disarms
@@ -168,7 +166,7 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadTextures()
 	{	
-		doltx = new TextureImage("Dolphin_HighPolyUV.png");
+		avatartx = new TextureImage("Dolphin_HighPolyUV.png");
 		ghosttx = new TextureImage("GHOUL.jpg");
 
 		spheretx = new TextureImage("Sphere_Satellite.png");
@@ -189,7 +187,7 @@ public class MyGame extends VariableFrameRateGame
 
 		linetx = new TextureImage("line.png");
 
-		manualCubetx = new TextureImage("GHOUL.jpg");
+		enemytx = new TextureImage("GHOUL.jpg");
 
 		spaceTexttx = new TextureImage("whiteText.png");
 
@@ -209,8 +207,9 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void buildObjects(){	
-		// build dolphin in the center of the window
-		dol = new GameObject(GameObject.root(), dolS, doltx);
+		// build avatar in the center of the window
+		avatar = new GameObject(GameObject.root(), avatarS, avatartx);
+		
 		sphere_sat = new GameObject(GameObject.root(), sphereS, spheretx);
 		cube_sat = new GameObject(GameObject.root(), cubeS, cubetx);
 		torus_sat = new GameObject(GameObject.root(), torusS, torustx);
@@ -224,7 +223,7 @@ public class MyGame extends VariableFrameRateGame
 
 		floor = new GameObject(GameObject.root(), floorS, floortx);
 
-		manualCube = new GameObject(GameObject.root(), ghoulHead, manualCubetx);
+		enemy = new GameObject(GameObject.root(), enemyS, enemytx);
 
 		spaceText = new GameObject(GameObject.root(), spaceTextS, spaceTexttx);
 
@@ -251,8 +250,8 @@ public class MyGame extends VariableFrameRateGame
 		wireG.propagateRotation(false);
 		wireB.propagateRotation(false);
 
-		dol.setLocalTranslation((new Matrix4f()).translation(0f,0f,0f));
-		dol.setLocalScale((new Matrix4f()).scaling(3.0f));
+		avatar.setLocalTranslation((new Matrix4f()).translation(0f,0f,0f));
+		avatar.setLocalScale((new Matrix4f()).scaling(3.0f));
 
 		sphere_sat.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, 15.0f));
 		sphere_sat.setLocalScale((new Matrix4f()).scaling(1.0f));
@@ -263,8 +262,8 @@ public class MyGame extends VariableFrameRateGame
 		torus_sat.setLocalTranslation((new Matrix4f()).translation(-15.0f, 0.0f, -15.0f));
 		torus_sat.setLocalScale((new Matrix4f()).scaling(0.9f));
 
-		manualCube.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
-		manualCube.setLocalScale((new Matrix4f()).scaling(50f));
+		enemy.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
+		enemy.setLocalScale((new Matrix4f()).scaling(50f));
 
 		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
 		floor.setLocalScale((new Matrix4f()).scaling(25f));
@@ -302,9 +301,9 @@ public class MyGame extends VariableFrameRateGame
 		light3.setDiffuse(1.0f, 0.729f, 0.0f);
 		light3.setSpecular(1.0f, 0.729f, 0.0f);
 
-		//Light that is inside of the enemy manualCube object
+		//Light that is inside of the enemy enemy object
 		enemyLight = new Light();
-		enemyLight.setLocation(manualCube.getWorldLocation());
+		enemyLight.setLocation(enemy.getWorldLocation());
 		enemyLight.setDiffuse(1.0f, 0.0f, 0.0f);
 		enemyLight.setSpecular(1.0f, 0.0f, 0.0f);
 
@@ -318,12 +317,14 @@ public class MyGame extends VariableFrameRateGame
 	public void initializeGame(){	
 		im = engine.getInputManager();
 
-		MoveAction move = new MoveAction(this, movementSpeed);
-		MoveAction moveBackward = new MoveAction(this, -movementSpeed);
-		TurnAction turn = new TurnAction(this, yawAmount);
-		TurnAction turnRight = new TurnAction(this, -yawAmount);
-		PitchAction pitchUp = new PitchAction(this, pitchAmount);
-		PitchAction pitchDown = new PitchAction(this, -pitchAmount);
+		setupNetworking();
+
+		MoveAction move = new MoveAction(this, protClient, movementSpeed);
+		MoveAction moveBackward = new MoveAction(this, protClient, -movementSpeed);
+		TurnAction turn = new TurnAction(this, protClient, yawAmount);
+		TurnAction turnRight = new TurnAction(this, protClient, -yawAmount);
+		PitchAction pitchUp = new PitchAction(this, protClient, pitchAmount);
+		PitchAction pitchDown = new PitchAction(this, protClient, -pitchAmount);
 		DisarmAction disarm = new DisarmAction(this);
 		DisableAxisAction disableAxis = new DisableAxisAction(this);
 
@@ -355,7 +356,7 @@ public class MyGame extends VariableFrameRateGame
 		minimap = (engine.getRenderSystem().getViewport("RIGHT").getCamera());
 
 		String gamepadName = im.getFirstGamepadName();
-		camOrbitController = new CameraOrbit3D(cam, dol, gamepadName, engine);
+		camOrbitController = new CameraOrbit3D(cam, avatar, gamepadName, engine);
 		minimapController = new CameraMinimap(minimap, floor, gamepadName, engine);
 
 		rc = new RotationController(engine, new Vector3f(0, 1, 0), 0.002f);
@@ -368,8 +369,6 @@ public class MyGame extends VariableFrameRateGame
 		bc.enable();
 
 		rc.addTarget(chamber);
-
-		setupNetworking();
 	}
 
 	@Override
@@ -390,19 +389,19 @@ public class MyGame extends VariableFrameRateGame
 			camOrbitController.updateCameraPosition();
 			minimapController.updateCameraPosition();
 
-			//Dolpin cannot go beneath the Y level of the floor plane
-			if (dol.getWorldLocation().y() < floor.getWorldLocation().y())
-				dol.setLocalLocation((dol.getWorldLocation().mul(new Vector3f(1f, 0f, 1f))).add(new Vector3f(0f, -1f, 0f)));
+			//avatarpin cannot go beneath the Y level of the floor plane
+			if (avatar.getWorldLocation().y() < floor.getWorldLocation().y())
+				avatar.setLocalLocation((avatar.getWorldLocation().mul(new Vector3f(1f, 0f, 1f))).add(new Vector3f(0f, -1f, 0f)));
 
-			//Set dolphin to height of height map to make them go over the peaks
-			loc = dol.getWorldLocation();
+			//Set avatarphin to height of height map to make them go over the peaks
+			loc = avatar.getWorldLocation();
 			height = floor.getHeight(loc.x(), loc.z());
-			dol.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
+			avatar.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
 
 			//Enemy ManualCube continues to look towards and follow the camera
-			manualCube.lookAt(dol.getWorldLocation());
-			//manualCube.move(0.01f);
-			enemyLight.setLocation(manualCube.getWorldLocation());
+			enemy.lookAt(avatar.getWorldLocation());
+			//enemy.move(0.01f);
+			enemyLight.setLocation(enemy.getWorldLocation());
 			
 			//Enemy light is always inside of enemy cube, and will flicker based on the elapsed time
 			if (Math.sin(currFrameTime/100) <= 0.5)
@@ -412,13 +411,13 @@ public class MyGame extends VariableFrameRateGame
 			
 			//Handles sphere's textures/states
 			if (!sphereDisarmed){
-				if (distance(sphere_sat.getWorldLocation(), dol.getWorldLocation()) <= detonationDistance){ //Sphere detonates
+				if (distance(sphere_sat.getWorldLocation(), avatar.getWorldLocation()) <= detonationDistance){ //Sphere detonates
 					sphere_sat.setTextureImage(detonatedtx);
 					gameOver = true;
 					broadcastMessage = " | SATELLITE DETONATED!";
 					hudColor = hudRedColor;
 				}
-				else if (distance(sphere_sat.getWorldLocation(), dol.getWorldLocation()) <= warningDistance){ //Sphere is in warning distance
+				else if (distance(sphere_sat.getWorldLocation(), avatar.getWorldLocation()) <= warningDistance){ //Sphere is in warning distance
 					sphere_sat.setTextureImage(s_safetx);
 					broadcastMessage = " | WARNING DISTANCE!";
 					hudColor = hudYellowColor;
@@ -437,7 +436,7 @@ public class MyGame extends VariableFrameRateGame
 						spaceText.setParent(sphere_sat);
 						spaceText.getRenderStates().enableRendering();
 
-						wireG.setParent(dol);
+						wireG.setParent(avatar);
 					}
 				}	
 			}
@@ -447,13 +446,13 @@ public class MyGame extends VariableFrameRateGame
 
 			//Handles cube's textures/states
 			if (!cubeDisarmed){
-				if (distance(cube_sat.getWorldLocation(), dol.getWorldLocation()) <= detonationDistance){ //Cube detonates
+				if (distance(cube_sat.getWorldLocation(), avatar.getWorldLocation()) <= detonationDistance){ //Cube detonates
 					cube_sat.setTextureImage(detonatedtx);
 					gameOver = true;
 					broadcastMessage = " | SATELLITE DETONATED!";
 					hudColor = hudRedColor;
 				}
-				else if (distance(cube_sat.getWorldLocation(), dol.getWorldLocation()) <= warningDistance){ //Cube is in warning distance
+				else if (distance(cube_sat.getWorldLocation(), avatar.getWorldLocation()) <= warningDistance){ //Cube is in warning distance
 					cube_sat.setTextureImage(c_safetx);
 					broadcastMessage = " | WARNING DISTANCE!";
 					hudColor = hudYellowColor;
@@ -472,7 +471,7 @@ public class MyGame extends VariableFrameRateGame
 						spaceText.setParent(cube_sat);
 						spaceText.getRenderStates().enableRendering();
 
-						wireB.setParent(dol);
+						wireB.setParent(avatar);
 					}
 				}
 			}
@@ -482,13 +481,13 @@ public class MyGame extends VariableFrameRateGame
 
 			//Handles torus's textures/states
 			if (!torusDisarmed){
-				if (distance(torus_sat.getWorldLocation(), dol.getWorldLocation()) <= detonationDistance){ //Torus detonates
+				if (distance(torus_sat.getWorldLocation(), avatar.getWorldLocation()) <= detonationDistance){ //Torus detonates
 					torus_sat.setTextureImage(detonatedtx);
 					gameOver = true;
 					broadcastMessage = " | SATELLITE DETONATED!";
 					hudColor = hudRedColor;
 				}
-				else if (distance(torus_sat.getWorldLocation(), dol.getWorldLocation()) <= warningDistance){ //Torus is in warning distance
+				else if (distance(torus_sat.getWorldLocation(), avatar.getWorldLocation()) <= warningDistance){ //Torus is in warning distance
 					torus_sat.setTextureImage(t_safetx);
 					broadcastMessage = " | WARNING DISTANCE!";
 					hudColor = hudYellowColor;
@@ -507,7 +506,7 @@ public class MyGame extends VariableFrameRateGame
 						spaceText.setParent(torus_sat);
 						spaceText.getRenderStates().enableRendering();
 
-						wireR.setParent(dol);
+						wireR.setParent(avatar);
 					}
 				}
 			}
@@ -515,13 +514,13 @@ public class MyGame extends VariableFrameRateGame
 				torus_sat.setTextureImage(t_disarmtx);
 			}
 			
-			if (distance(manualCube.getWorldLocation(), dol.getWorldLocation()) <= 4.0f){
+			if (distance(enemy.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
 				broadcastMessage = " | ENEMY IS CLOSING IN!";
 				hudColor = hudRedColor;
 			}
-			else if (distance(sphere_sat.getWorldLocation(), dol.getWorldLocation()) > warningDistance &&
-			distance(cube_sat.getWorldLocation(), dol.getWorldLocation()) > warningDistance && 
-			distance(torus_sat.getWorldLocation(), dol.getWorldLocation()) > warningDistance){
+			else if (distance(sphere_sat.getWorldLocation(), avatar.getWorldLocation()) > warningDistance &&
+			distance(cube_sat.getWorldLocation(), avatar.getWorldLocation()) > warningDistance && 
+			distance(torus_sat.getWorldLocation(), avatar.getWorldLocation()) > warningDistance){
 				broadcastMessage = "";
 				hudColor = hudWhiteColor;
 			}
@@ -530,7 +529,7 @@ public class MyGame extends VariableFrameRateGame
 				hasWon = true; //Game is won - all satellites were disarmed
 				callOnce = true;
 			}
-			else if (distance(manualCube.getWorldLocation(), dol.getWorldLocation()) <= 1.0f)
+			else if (distance(enemy.getWorldLocation(), avatar.getWorldLocation()) <= 1.0f)
 				gameOver = true; //Game is over - the enemy caught you
 		
 			// Broadcast any new message and update HUD 1
@@ -539,7 +538,7 @@ public class MyGame extends VariableFrameRateGame
 			// Update HUD 2 for the smaller viewport
 			vp2X = (int) ((engine.getRenderSystem()).getViewport("RIGHT").getRelativeLeft() * (engine.getRenderSystem()).getWidth());
 			vp2Y = (int) ((engine.getRenderSystem()).getViewport("RIGHT").getRelativeBottom() * (engine.getRenderSystem()).getHeight());
-			(engine.getHUDmanager()).setHUD2("Location: X: " + Float.toString(dol.getWorldLocation().x()) + ", Y: " + Float.toString(dol.getWorldLocation().y()), hudWhiteColor, vp2X + 2, vp2Y + 2);
+			(engine.getHUDmanager()).setHUD2("Location: X: " + Float.toString(avatar.getWorldLocation().x()) + ", Y: " + Float.toString(avatar.getWorldLocation().y()), hudWhiteColor, vp2X + 2, vp2Y + 2);
 			
 			spaceText.lookAt(cam.getLocation()); //Text will always face towards the camera
 
@@ -604,16 +603,12 @@ public class MyGame extends VariableFrameRateGame
 	}
 
 	//Get & set functions needed in MoveAction, DisarmAction, and TurnAction
-	public boolean isOnDolphin(){
-		return isOnDolphin;
-	}
-
 	public Camera getMainCamera(){
 		return (engine.getRenderSystem().getViewport("MAIN").getCamera());
 	}
 
 	public GameObject getAvatar(){
-		return dol;
+		return avatar;
 	}
 
 	//Sets the disarming state to true or false
@@ -670,7 +665,7 @@ public class MyGame extends VariableFrameRateGame
 			protClient.processPackets();
 	}
 
-	public Vector3f getPlayerPosition() { return dol.getWorldLocation(); }
+	public Vector3f getPlayerPosition() { return avatar.getWorldLocation(); }
 
 	public void setIsConnected(boolean value) { this.isClientConnected = value; }
 	

@@ -52,13 +52,23 @@ public class GhostManager
 		return null;
 	}
 	
-	public void updateGhostAvatar(UUID id, Vector3f position)
+	public void updateGhostAvatarPosition(UUID id, Vector3f position)
 	{	GhostAvatar ghostAvatar = findAvatar(id);
 		if (ghostAvatar != null)
 		{	ghostAvatar.setPosition(position);
 		}
 		else
 		{	System.out.println("tried to update ghost avatar position, but unable to find ghost in list");
+		}
+	}
+
+	public void updateGhostAvatarRotation(UUID id, Matrix4f rotation)
+	{	GhostAvatar ghostAvatar = findAvatar(id);
+		if (ghostAvatar != null)
+		{	ghostAvatar.setRotation(rotation);
+		}
+		else
+		{	System.out.println("tried to update ghost avatar rotation, but unable to find ghost in list");
 		}
 	}
 }

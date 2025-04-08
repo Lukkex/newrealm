@@ -10,7 +10,7 @@ public class NetworkingServer {
 	private static String serverProtocol;
 	
 	private static Scanner scan = new Scanner(System.in);
-	private static final int DEFAULT_PORT_NUMBER = 8888;
+	private static final int DEFAULT_PORT_NUMBER = 6010;
 	private static final String DEFAULT_PROTOCOL = "UDP";
 
 	public NetworkingServer(int serverPort, String protocol) {	

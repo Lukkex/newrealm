@@ -81,13 +81,37 @@ public class GameServerTCP extends GameConnectionServer<UUID>
 				sendDetailsForMessage(clientID, remoteID, pos);
 			}
 			
-			// Case where server receives a MOVE message
+			// MOVE --- Case where server receives a move message
 			// Received Message Format: (move,localId,x,y,z)
 			if(messageTokens[0].compareTo("move") == 0)
 			{	UUID clientID = UUID.fromString(messageTokens[1]);
 				String[] pos = {messageTokens[2], messageTokens[3], messageTokens[4]};
 				sendMoveMessages(clientID, pos);
-			}
+			}	
+
+			// ROTATE --- Case where server receives a rotate message
+			// Received Message Format: (rotate,localId,m00,...,m33)
+			if(messageTokens[0].compareTo("rotate") == 0)
+			{	UUID clientID = UUID.fromString(messageTokens[1]);
+				String[] rotation = {
+					messageTokens[2],
+					messageTokens[3],
+					messageTokens[4], 
+					messageTokens[5],
+					messageTokens[6],
+					messageTokens[7], 
+					messageTokens[8],
+					messageTokens[9],
+					messageTokens[10],
+					messageTokens[11],
+					messageTokens[12], 
+					messageTokens[13],
+					messageTokens[14],
+					messageTokens[15], 
+					messageTokens[16],
+					messageTokens[17]};
+				sendRotateMessages(clientID, rotation);
+			}	
 		}
 	}
 
@@ -206,5 +230,19 @@ public class GameServerTCP extends GameConnectionServer<UUID>
 		catch (IOException e) 
 		{	e.printStackTrace();
 		}
+	}
+	
+	public void sendRotateMessages(UUID clientID, String[] rotation){
+		try 
+		{	String message = new String("rotate," + clientID.toString());
+			for (int i = 0; i < rotation.length; i++){
+				message += "," + rotation[i];
+			}
+		
+			forwardPacketToAll(message, clientID);
+		} 
+		catch (IOException e) {	
+			e.printStackTrace();
+		}	
 	}
 }

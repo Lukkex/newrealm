@@ -104,8 +104,41 @@ public class ProtocolClient extends GameConnectionClient
 					Float.parseFloat(messageTokens[3]),
 					Float.parseFloat(messageTokens[4]));
 				
-				ghostManager.updateGhostAvatar(ghostID, ghostPosition);
-	}	}	}
+				ghostManager.updateGhostAvatarPosition(ghostID, ghostPosition);
+			}	
+
+			// Handle ROTATE message
+			// Format: (move,remoteId,x,y,z)
+			if (messageTokens[0].compareTo("rotate") == 0)
+			{
+				// move a ghost avatar
+				// Parse out the id into a UUID
+				UUID ghostID = UUID.fromString(messageTokens[1]);
+				
+				// Parse out the position into a Matrix4f
+				Matrix4f ghostRotation = new Matrix4f(
+					Float.parseFloat(messageTokens[2]),
+					Float.parseFloat(messageTokens[3]),
+					Float.parseFloat(messageTokens[4]), 
+					Float.parseFloat(messageTokens[5]),
+					Float.parseFloat(messageTokens[6]),
+					Float.parseFloat(messageTokens[7]), 
+					Float.parseFloat(messageTokens[8]),
+					Float.parseFloat(messageTokens[9]),
+					Float.parseFloat(messageTokens[10]),
+					Float.parseFloat(messageTokens[11]),
+					Float.parseFloat(messageTokens[12]), 
+					Float.parseFloat(messageTokens[13]),
+					Float.parseFloat(messageTokens[14]),
+					Float.parseFloat(messageTokens[15]), 
+					Float.parseFloat(messageTokens[16]),
+					Float.parseFloat(messageTokens[17])
+					);
+				
+				ghostManager.updateGhostAvatarRotation(ghostID, ghostRotation);
+			}	
+		}	
+	}
 	
 	// The initial message from the game client requesting to join the 
 	// server. localId is a unique identifier for the client. Recommend 
@@ -177,5 +210,24 @@ public class ProtocolClient extends GameConnectionClient
 			sendPacket(message);
 		} catch (IOException e) 
 		{	e.printStackTrace();
-	}	}
+		}	
+	}
+
+	// Informs the server that the local avatar has rotated.  
+	// Message Format: (move,localId,rotation).
+
+	public void sendRotateMessage(Matrix4f rotation)
+	{	try 
+		{	String message = new String("rotate," + id.toString());
+			message += "," + 
+			rotation.m00() + "," + rotation.m01() + "," + rotation.m02() + "," + rotation.m03() + "," +
+			rotation.m10() + "," + rotation.m11() + "," + rotation.m12() + "," + rotation.m13() + "," +
+			rotation.m20() + "," + rotation.m21() + "," + rotation.m22() + "," + rotation.m23() + "," +
+			rotation.m30() + "," + rotation.m31() + "," + rotation.m32() + "," + rotation.m33();
+			
+			sendPacket(message);
+		} catch (IOException e) 
+		{	e.printStackTrace();
+		}	
+	}
 }

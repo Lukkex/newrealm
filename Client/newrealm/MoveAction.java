@@ -8,9 +8,11 @@ public class MoveAction extends AbstractInputAction{
     private MyGame game;
     private GameObject obj;
     private float movementSpeed;
+    private ProtocolClient protClient;
 
-    public MoveAction(MyGame g, float speed){
+    public MoveAction(MyGame g, ProtocolClient p, float speed){
         game = g;
+		protClient = p;
         movementSpeed = speed;
     }
 
@@ -18,5 +20,6 @@ public class MoveAction extends AbstractInputAction{
     public void performAction(float time, Event e){
         obj = game.getAvatar();
         obj.move(movementSpeed * e.getValue());
+        protClient.sendMoveMessage(obj.getWorldLocation());
     }
 }
