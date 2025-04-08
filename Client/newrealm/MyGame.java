@@ -86,6 +86,12 @@ public class MyGame extends VariableFrameRateGame
 	public MyGame(String serverAddress, int serverPort, String protocol){ 
 		super(); 
 		gm = new GhostManager(this);
+		this.serverAddress = serverAddress;
+		this.serverPort = serverPort;
+		if (protocol.toUpperCase().compareTo("TCP") == 0)
+			this.serverProtocol = ProtocolType.TCP;
+		else
+			this.serverProtocol = ProtocolType.UDP;
 	}
 
 	public static void main(String[] args)
@@ -600,10 +606,10 @@ public class MyGame extends VariableFrameRateGame
 	public GhostManager getGhostManager() { return gm; }
 	public Engine getEngine() { return engine; }
 	
-	private void setupNetworking()
-	{	isClientConnected = false;	
-		try 
-		{	protClient = new ProtocolClient(InetAddress.getByName(serverAddress), serverPort, serverProtocol, this);
+	private void setupNetworking() {	
+		isClientConnected = false;	
+		try {	
+			protClient = new ProtocolClient(InetAddress.getByName(serverAddress), serverPort, serverProtocol, this);
 		} 	catch (UnknownHostException e) 
 		{	e.printStackTrace();
 		}	catch (IOException e) 
