@@ -26,7 +26,6 @@ public class GhostAvatar extends GameObject
 	public void setPosition(Vector3f m) { setLocalLocation(m); }
 	public Vector3f getPosition() { return getWorldLocation(); }
 
-	public void setRotation(Matrix4f m) { setLocalRotation(m); 
-		System.out.println("Rotation: " + this.getRotation());}
+	public void setRotation(Matrix4f m) { setLocalRotation(m); }
 	public Matrix4f getRotation() { return getWorldRotation(); }
 }

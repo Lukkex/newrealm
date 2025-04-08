@@ -59,16 +59,16 @@ public class MyGame extends VariableFrameRateGame
 
 	private GameObject avatar, sphere_sat, 
 	cube_sat, torus_sat, lineX, lineY, lineZ, 
-	enemy, floor, spaceText, wireR, wireG, wireB,
+	enemy, floor, ground, spaceText, wireR, wireG, wireB,
 	chamber;
 
 	private ObjShape avatarS, ghostS, sphereS, cubeS, torusS, lineSx, 
-	lineSy, lineSz, enemyS, floorS, spaceTextS, wireS, chamberS;
+	lineSy, lineSz, enemyS, floorS, groundS, spaceTextS, wireS, chamberS;
 
 	private TextureImage avatartx, ghosttx, spheretx, s_safetx, s_disarmtx, 
 	cubetx, c_safetx, c_disarmtx, torustx, t_safetx, t_disarmtx, 
-	linetx, enemytx, floortx, floorheightmap, detonatedtx, 
-	spaceTexttx, wireRtx, wireGtx, wireBtx, chambertx;
+	linetx, enemytx, floortx, groundtx, floorheightmap, groundheightmap, 
+	detonatedtx, spaceTexttx, wireRtx, wireGtx, wireBtx, chambertx;
 
 	private Light light1, light2, light3, enemyLight;
 
@@ -141,13 +141,14 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	
-		avatarS = new ImportedModel("DolphinHighPoly.obj");
+		avatarS = new ImportedModel("GHOULhead.obj");
 		ghostS = new ImportedModel("GHOULhead.obj");
 		sphereS = new Sphere();
 		cubeS = new Cube();
 		torusS = new Torus();
 		enemyS = new ImportedModel("GHOUL.obj");
 		floorS = new TerrainPlane(1000);
+		groundS = new TerrainPlane(100);
 
 		//Custom space text for after disarms
 		spaceTextS = new ImportedModel("spacetext.obj");
@@ -166,7 +167,7 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadTextures()
 	{	
-		avatartx = new TextureImage("Dolphin_HighPolyUV.png");
+		avatartx = new TextureImage("GHOUL.jpg");
 		ghosttx = new TextureImage("GHOUL.jpg");
 
 		spheretx = new TextureImage("Sphere_Satellite.png");
@@ -183,6 +184,10 @@ public class MyGame extends VariableFrameRateGame
 
 		floortx = new TextureImage("ground.jpg");
 		floorheightmap = new TextureImage("floorheightmap.jpg");
+
+		groundtx = new TextureImage("wireG.png");
+		groundheightmap = new TextureImage("sanfrancisco.jpg");
+
 		detonatedtx = new TextureImage("detonated.png");
 
 		linetx = new TextureImage("line.png");
@@ -223,6 +228,8 @@ public class MyGame extends VariableFrameRateGame
 
 		floor = new GameObject(GameObject.root(), floorS, floortx);
 
+		ground = new GameObject(GameObject.root(), groundS, groundtx);
+
 		enemy = new GameObject(GameObject.root(), enemyS, enemytx);
 
 		spaceText = new GameObject(GameObject.root(), spaceTextS, spaceTexttx);
@@ -251,7 +258,7 @@ public class MyGame extends VariableFrameRateGame
 		wireB.propagateRotation(false);
 
 		avatar.setLocalTranslation((new Matrix4f()).translation(0f,0f,0f));
-		avatar.setLocalScale((new Matrix4f()).scaling(3.0f));
+		//avatar.setLocalScale((new Matrix4f()).scaling(3.0f));
 
 		sphere_sat.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, 15.0f));
 		sphere_sat.setLocalScale((new Matrix4f()).scaling(1.0f));
@@ -270,6 +277,12 @@ public class MyGame extends VariableFrameRateGame
 		floor.setHeightMap(floorheightmap);
 		floor.getRenderStates().setTiling(1);
 		floor.getRenderStates().setTileFactor(10);
+
+		ground.setLocalTranslation((new Matrix4f()).translation(0f, -200f, 0f));
+		ground.setLocalScale((new Matrix4f()).scaling(100f));
+		ground.setHeightMap(groundheightmap);
+		ground.getRenderStates().setTiling(1);
+		ground.getRenderStates().setTileFactor(10);
 
 		spaceText.setLocalTranslation((new Matrix4f()).translation(0f, 2f, 0f));
 		spaceText.setLocalScale((new Matrix4f()).scaling(0.2f));
@@ -400,7 +413,7 @@ public class MyGame extends VariableFrameRateGame
 
 			//Enemy ManualCube continues to look towards and follow the camera
 			enemy.lookAt(avatar.getWorldLocation());
-			//enemy.move(0.01f);
+			enemy.move(0.01f);
 			enemyLight.setLocation(enemy.getWorldLocation());
 			
 			//Enemy light is always inside of enemy cube, and will flicker based on the elapsed time
