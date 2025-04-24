@@ -698,8 +698,8 @@ public class MyGame extends VariableFrameRateGame
 			curMouseY = e.getYOnScreen();
 			float mouseDeltaX = prevMouseX - curMouseX;
 			float mouseDeltaY = prevMouseY - curMouseY;
-			cam.yaw(mouseDeltaX  * cameraMoveSpeed);
-			cam.pitch(mouseDeltaY  * cameraMoveSpeed);
+			camOrbitController.updateAzimuth(mouseDeltaX  * cameraMoveSpeed * (float)(elapsTime));
+			camOrbitController.updateElevation(mouseDeltaY  * cameraMoveSpeed * (float)(elapsTime));
 			prevMouseX = curMouseX;
 			prevMouseY = curMouseY;
 			// tell robot to put the cursor to the center (since user just moved it)

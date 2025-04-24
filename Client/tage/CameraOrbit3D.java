@@ -120,4 +120,19 @@ public class CameraOrbit3D {
             updateCameraPosition();
         } 
     }
+
+    public void updateAzimuth(float rotAmount){
+        cameraAzimuth += rotAmount;
+        updateCameraPosition();
+    }
+
+    public void updateElevation(float rotAmount){
+        cameraElevation += rotAmount;
+        updateCameraPosition();
+    }
+
+    public void updateRadius(float rotAmount){
+        cameraRadius += rotAmount;
+        updateCameraPosition();
+    }
 }
