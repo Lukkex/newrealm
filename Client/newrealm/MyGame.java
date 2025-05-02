@@ -81,15 +81,16 @@ public class MyGame extends VariableFrameRateGame
 	private Matrix4f cameraRotation;
 
 	private GameObject avatar, lineX, lineY, lineZ, 
-	ghoul, floor, ground, chamber;
+	ghoul, floor, ground, chamber, cone, eye, stars1, stars2, sanctum, starLarge, upperChamber;
 
-	private ObjShape ghostS, lineSx, 
-	lineSy, lineSz, floorS, groundS, chamberS;
+	private ObjShape avatarS, ghostS, lineSx, 
+	lineSy, lineSz, floorS, groundS, chamberS, coneS, eyeS, stars1S, stars2S, sanctumS, starLargeS, upperChamberS;
 
-	private AnimatedShape avatarS, ghoulS;
+	private AnimatedShape avatarrS, ghoulS;
 
 	private TextureImage avatartx, ghosttx, linetx, ghoultx, 
-	floortx, groundtx, floorheightmap, groundheightmap, chambertx;
+	floortx, groundtx, floorheightmap, groundheightmap, chambertx,
+	conetx, eyetx, stars1tx, stars2tx, sanctumtx, starLargetx, upperChambertx;
 
 	private Light light1, light2, light3, enemyLight;
 
@@ -160,8 +161,9 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	
-		avatarS = new AnimatedShape("Arms.rkm", "Arms.rks");
-		avatarS.loadAnimation("IDLE", "ArmsIdle.rka");
+		avatarS = new ImportedModel("Arms.obj");
+		//avatarS = new AnimatedShape("Arms.rkm", "Arms.rks");
+		//avatarS.loadAnimation("IDLE", "ArmsIdle.rka");
 		ghostS = new ImportedModel("GHOULhead.obj");
 		ghoulS = new AnimatedShape("Ghoul.rkm", "Ghoul.rks");
 		ghoulS.loadAnimation("IDLE", "GhoulIdle.rka");
@@ -169,6 +171,14 @@ public class MyGame extends VariableFrameRateGame
 		groundS = new TerrainPlane(100);
 
 		chamberS = new ImportedModel("Chamber.obj");
+
+		coneS = new ImportedModel("Cone.obj");
+		eyeS = new ImportedModel("crazyeye.obj");
+		stars1S = new ImportedModel("outerStars1.obj");
+		stars2S = new ImportedModel("outerStars2.obj");
+		sanctumS = new ImportedModel("Sanctum.obj");
+		starLargeS = new ImportedModel("Star.obj");
+		upperChamberS = new ImportedModel("UpperChamber.obj");
 
 		//X, Y, & Z Axes Lines
 		lineSy = new Line(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, lineLength, 0.0f));
@@ -193,6 +203,20 @@ public class MyGame extends VariableFrameRateGame
 		ghoultx = new TextureImage("GHOUL.jpg");
 
 		chambertx = new TextureImage("Chamber.jpg");
+
+		conetx = new TextureImage("brick1.jpg");
+
+		eyetx = new TextureImage("crazyeye.png");
+
+		stars1tx = new TextureImage("Star.jpg");
+
+		stars2tx = new TextureImage("Star.jpg");
+
+		starLargetx = new TextureImage("Star.jpg");
+
+		sanctumtx = new TextureImage("Sanctum.jpg");
+
+		upperChambertx = new TextureImage("Star.jpg");
 	}
 
 	@Override
@@ -246,7 +270,7 @@ public class MyGame extends VariableFrameRateGame
 		avatar.setLocalScale((new Matrix4f()).scaling(0.1f));
 
 		ghoul.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
-		ghoul.setLocalScale((new Matrix4f()).scaling(1f));
+		ghoul.setLocalScale((new Matrix4f()).scaling(0.1f));
 
 		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
 		floor.setLocalScale((new Matrix4f()).scaling(25f));
@@ -263,6 +287,28 @@ public class MyGame extends VariableFrameRateGame
 		chamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		chamber.setLocalScale((new Matrix4f()).scaling(8f));
 		chamber.getRenderStates().setRenderHiddenFaces(true);;
+
+		cone = new GameObject(GameObject.root(), coneS, conetx);
+		eye = new GameObject(GameObject.root(), eyeS, eyetx);
+		stars1 = new GameObject(GameObject.root(), stars1S, stars1tx);
+		stars2 = new GameObject(GameObject.root(), stars2S, stars2tx);
+		starLarge = new GameObject(GameObject.root(), starLargeS, starLargetx);
+		sanctum = new GameObject(GameObject.root(), sanctumS, sanctumtx);
+		upperChamber = new GameObject(GameObject.root(), upperChamberS, upperChambertx);
+
+		cone.setLocalScale((new Matrix4f()).scaling(8f));
+		eye.setLocalScale((new Matrix4f()).scaling(2f));
+		eye.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		stars1.setLocalScale((new Matrix4f()).scaling(8f));
+		stars1.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		stars2.setLocalScale((new Matrix4f()).scaling(8f));
+		stars2.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		starLarge.setLocalScale((new Matrix4f()).scaling(8f));
+		starLarge.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		sanctum.setLocalScale((new Matrix4f()).scaling(8f));
+		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
+		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 	}
 
 	@Override
@@ -348,11 +394,14 @@ public class MyGame extends VariableFrameRateGame
 		bc.enable();
 
 		rc.addTarget(chamber);
+		rc.addTarget(stars1);
+		rc.addTarget(starLarge);
+		bc.addTarget(upperChamber);
 
 		initMouseMode();
 
 		// Animation
-		avatarS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
+		//avatarS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
 		ghoulS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
 	
 		// Camera
@@ -375,12 +424,12 @@ public class MyGame extends VariableFrameRateGame
 		float radius = 0.75f;
 		float height = 2.0f;
 		double[ ] tempTransform;
-		Matrix4f translation = new Matrix4f(chamber.getLocalTranslation());
+		Matrix4f translation = new Matrix4f(eye.getLocalTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
 		caps1P = (engine.getSceneGraph()).addPhysicsCapsuleX(
 		mass, tempTransform, radius, height);
 		caps1P.setBounciness(0.8f);
-		chamber.setPhysicsObject(caps1P);
+		eye.setPhysicsObject(caps1P);
 		//translation = new Matrix4f(dol2.getLocalTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
 		caps2P = (engine.getSceneGraph()).addPhysicsCapsuleX(
@@ -410,6 +459,8 @@ public class MyGame extends VariableFrameRateGame
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
 
+			avatar.setLocalRotation(cam.getLocalRotation());
+
 			//Physics
 			Matrix4f currentTranslation, currentRotation;
 			AxisAngle4f aa = new AxisAngle4f();
@@ -417,7 +468,7 @@ public class MyGame extends VariableFrameRateGame
 			Matrix4f mat2 = new Matrix4f().identity();
 			Matrix4f mat3 = new Matrix4f().identity();
 			checkForCollisions();
-			physicsEngine.update((float) elapsTime);
+			physicsEngine.update((float) elapsTime * 7);
 			for (GameObject go:engine.getSceneGraph().getGameObjects()){ 
 				if (go.getPhysicsObject() != null){ 
 					// set translation
@@ -437,7 +488,7 @@ public class MyGame extends VariableFrameRateGame
 			movementSpeed = DEFAULT_SPEED * (float) elapsTime;
 
 			//Animations
-			avatarS.updateAnimation();
+			//avatarS.updateAnimation();
 			ghoulS.updateAnimation();
 
 			//Input Manager
@@ -588,13 +639,7 @@ public class MyGame extends VariableFrameRateGame
 	public void mouseMoved(MouseEvent e)
 	{ 	// if robot is recentering and the MouseEvent location is in the center,
 		// then this event was generated by the robot
-		if (isRecentering &&
-		centerX == e.getXOnScreen() && centerY == e.getYOnScreen())
-		{ // mouse recentered, recentering complete
-			isRecentering = false;
-		}
-		else
-		{ // event was due to a user mouse-move, and must be processed
+ // event was due to a user mouse-move, and must be processed
 			curMouseX = e.getXOnScreen();
 			curMouseY = e.getYOnScreen();
 			float mouseDeltaX = prevMouseX - curMouseX;
@@ -607,7 +652,7 @@ public class MyGame extends VariableFrameRateGame
 			recenterMouse();
 			prevMouseX = centerX; // reset prev to center
 			prevMouseY = centerY;
-		}
+		
 	}
 
 	private void recenterMouse()

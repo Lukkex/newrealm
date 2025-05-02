@@ -117,7 +117,7 @@ public class Camera
 	/** Rotates Camera around its Z Axis (pitch) by the specifided rotation amount */
 	public void pitch(float rotationAmount){
 		System.out.println("Pitch angle: " + currentPitchAngle);
-		if (currentPitchAngle + rotationAmount > 2.0f || currentPitchAngle + rotationAmount < -2.0f){
+		if (currentPitchAngle + rotationAmount > 1.3f || currentPitchAngle + rotationAmount < -1.3f){
 			//Exceeds pitch limit
 			return;
 		}
@@ -129,9 +129,9 @@ public class Camera
 
 	/** Converts Rotation Matrix to a Vector3f of Euler angles */
 	public Matrix4f getLocalRotation(){
-		viewR.set(u.x(), v.x(), -n.x(), 0.0f,
-		u.y(), v.y(), -n.y(), 0.0f,
-		u.z(), v.z(), -n.z(), 0.0f,
+		viewR.set(u.x(), v.x(), n.x(), 0.0f,
+		u.y(), v.y(), n.y(), 0.0f,
+		u.z(), v.z(), n.z(), 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
 
 		return viewR;
