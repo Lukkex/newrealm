@@ -20,6 +20,7 @@ public class Camera
 	private Vector3f defaultU, defaultV, defaultN;
 	private Vector3f location, defaultLocation, rotation;
 	private Matrix4f view, viewR, viewT;
+	private float currentPitchAngle = 0.0f;
 
 	/** instantiates a Camera object at location (0,0,1) and facing down the -Z axis towards the origin */
 	public Camera()
@@ -107,15 +108,23 @@ public class Camera
 	/** Rotates Camera around its Y Axis (yaw) by the specifided rotation amount */
 	public void yaw(float rotationAmount){
 		//Rotate U & N around V (yaw) by rotationAmount
-		n.rotateAxis(rotationAmount, v.x, v.y, v.z, n);
-		u.rotateAxis(rotationAmount, v.x, v.y, v.z, u);
+		n.rotateAxis(rotationAmount, 0.0f, 1.0f, 0.0f);
+		n.cross(0.0f, 1.0f, 0.0f, u);
+		u.rotateAxis(rotationAmount, v.x, v.y, v.z);
+		u.cross(n, v);
 	}
 
 	/** Rotates Camera around its Z Axis (pitch) by the specifided rotation amount */
 	public void pitch(float rotationAmount){
+		System.out.println("Pitch angle: " + currentPitchAngle);
+		if (currentPitchAngle + rotationAmount > 2.0f || currentPitchAngle + rotationAmount < -2.0f){
+			//Exceeds pitch limit
+			return;
+		}
 		//Rotate V & N around U (pitch) by rotationAmount
-		n.rotateAxis(rotationAmount, u.x, u.y, u.z, n);
-		v.rotateAxis(rotationAmount, u.x, u.y, u.z, v);
+		n.rotateAxis(rotationAmount, u.x, u.y, u.z);
+		v.rotateAxis(rotationAmount, u.x, u.y, u.z);
+		currentPitchAngle += rotationAmount;
 	}
 
 	/** Converts Rotation Matrix to a Vector3f of Euler angles */

@@ -22,6 +22,8 @@ import tage.networking.IGameConnection.ProtocolType;
 import tage.nodeControllers.*;
 import tage.physics.PhysicsEngine;
 import tage.physics.PhysicsObject;
+import tage.physics.JBullet.JBulletPhysicsEngine;
+import tage.physics.JBullet.JBulletPhysicsObject;
 
 import java.util.Scanner;
 
@@ -38,6 +40,7 @@ public class MyGame extends VariableFrameRateGame
 	//Physics
 	private PhysicsEngine physicsEngine;
 	private PhysicsObject caps1P, caps2P, planeP;
+	private float vals[] = new float[16];
 
 	private Robot robot;
 	private float curMouseX, curMouseY, centerX, centerY;
@@ -50,7 +53,7 @@ public class MyGame extends VariableFrameRateGame
 	private final String DEFAULT_IP_ADDRESS = "192.168.1.19";
 	private final int DEFAULT_PORT_NUMBER = 6010;
 
-	private int fluffyClouds; //skyboxes
+	private int fluffyClouds, eyeRedSky; //skyboxes
 
 	private boolean hasWon, gameOver, callOnce = false;
 	private boolean worldAxisOn = true;
@@ -195,7 +198,8 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadSkyBoxes() {
 		fluffyClouds = (engine.getSceneGraph()).loadCubeMap("fluffyClouds");
-		(engine.getSceneGraph()).setActiveSkyBoxTexture(fluffyClouds);
+		eyeRedSky = (engine.getSceneGraph()).loadCubeMap("eyeRedSky");
+		(engine.getSceneGraph()).setActiveSkyBoxTexture(eyeRedSky);
 		(engine.getSceneGraph()).setSkyBoxEnabled(true);
 	}
 
@@ -239,14 +243,14 @@ public class MyGame extends VariableFrameRateGame
 		chamber = new GameObject(GameObject.root(), chamberS, chambertx);
 
 		avatar.setLocalTranslation((new Matrix4f()).translation(0f,0f,0f));
-		avatar.setLocalScale((new Matrix4f()).scaling(0.3f));
+		avatar.setLocalScale((new Matrix4f()).scaling(0.1f));
 
 		ghoul.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
 		ghoul.setLocalScale((new Matrix4f()).scaling(1f));
 
 		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
 		floor.setLocalScale((new Matrix4f()).scaling(25f));
-		floor.setHeightMap(floorheightmap);
+		//floor.setHeightMap(floorheightmap);
 		floor.getRenderStates().setTiling(1);
 		floor.getRenderStates().setTileFactor(10);
 
@@ -359,6 +363,38 @@ public class MyGame extends VariableFrameRateGame
 		BGSound.setLocation(ground.getWorldLocation());
 		setEarParameters();
 		BGSound.play();
+
+		//Physics
+		// --- initialize physics system ---
+		float[] gravity = {0f, -5f, 0f};
+		physicsEngine = (engine.getSceneGraph()).getPhysicsEngine();
+		physicsEngine.setGravity(gravity);
+		// --- create physics world ---
+		float mass = 1.0f;
+		float up[ ] = {0,1,0};
+		float radius = 0.75f;
+		float height = 2.0f;
+		double[ ] tempTransform;
+		Matrix4f translation = new Matrix4f(chamber.getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		caps1P = (engine.getSceneGraph()).addPhysicsCapsuleX(
+		mass, tempTransform, radius, height);
+		caps1P.setBounciness(0.8f);
+		chamber.setPhysicsObject(caps1P);
+		//translation = new Matrix4f(dol2.getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		caps2P = (engine.getSceneGraph()).addPhysicsCapsuleX(
+		mass, tempTransform, radius, height);
+		caps2P.setBounciness(0.8f);
+		//dol2.setPhysicsObject(caps2P);
+		translation = new Matrix4f(floor.getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		planeP = (engine.getSceneGraph()).addPhysicsStaticPlane(
+		tempTransform, up, 0.0f);
+		planeP.setBounciness(1.0f);
+		floor.setPhysicsObject(planeP);
+		engine.enableGraphicsWorldRender();
+		engine.enablePhysicsWorldRender();
 	}
 
 	public void setEarParameters(){
@@ -373,6 +409,29 @@ public class MyGame extends VariableFrameRateGame
 			lastFrameTime = currFrameTime;
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
+
+			//Physics
+			Matrix4f currentTranslation, currentRotation;
+			AxisAngle4f aa = new AxisAngle4f();
+			Matrix4f mat = new Matrix4f();
+			Matrix4f mat2 = new Matrix4f().identity();
+			Matrix4f mat3 = new Matrix4f().identity();
+			checkForCollisions();
+			physicsEngine.update((float) elapsTime);
+			for (GameObject go:engine.getSceneGraph().getGameObjects()){ 
+				if (go.getPhysicsObject() != null){ 
+					// set translation
+					mat.set(toFloatArray(go.getPhysicsObject().getTransform()));
+					mat2.set(3,0,mat.m30());
+					mat2.set(3,1,mat.m31());
+					mat2.set(3,2,mat.m32());
+					go.setLocalTranslation(mat2);
+					// set rotation
+					mat.getRotation(aa);
+					mat3.rotation(aa);
+					go.setLocalRotation(mat3);
+				}
+			} 
 
 			//Movement speed is based on elapsed time; InputManager gets updated and Action classes use this speed variable
 			movementSpeed = DEFAULT_SPEED * (float) elapsTime;
@@ -489,6 +548,8 @@ public class MyGame extends VariableFrameRateGame
 		}
 	}
 
+	// ---------- MOUSE SECTION ----------------
+
 	public void initMouseMode()
 	{
 		RenderSystem rs = engine.getRenderSystem();
@@ -512,7 +573,7 @@ public class MyGame extends VariableFrameRateGame
 		prevMouseX = centerX; // 'prevMouse' defines the initial
 		prevMouseY = centerY; // mouse position
 		// also change the cursor
-		Image faceImage = new ImageIcon("./assets/textures/ManualCube.png").getImage();
+		Image faceImage = new ImageIcon("./assets/textures/eyecrosshair.png").getImage();
 		Cursor faceCursor = Toolkit.getDefaultToolkit().
 		createCustomCursor(faceImage, new Point(0,0), "FaceCursor");
 		rs.getGLCanvas().setCursor(faceCursor);
@@ -607,5 +668,53 @@ public class MyGame extends VariableFrameRateGame
 			{	protClient.sendByeMessage();
 			}
 		}
+	}
+
+	// ---------- PHYSICS SECTION ----------------
+
+	private void checkForCollisions(){	
+		com.bulletphysics.dynamics.DynamicsWorld dynamicsWorld;
+		com.bulletphysics.collision.broadphase.Dispatcher dispatcher;
+		com.bulletphysics.collision.narrowphase.PersistentManifold manifold;
+		com.bulletphysics.dynamics.RigidBody object1, object2;
+		com.bulletphysics.collision.narrowphase.ManifoldPoint contactPoint;
+
+		dynamicsWorld = ((JBulletPhysicsEngine)physicsEngine).getDynamicsWorld();
+		dispatcher = dynamicsWorld.getDispatcher();
+		int manifoldCount = dispatcher.getNumManifolds();
+		for (int i=0; i < manifoldCount; i++)
+		{	manifold = dispatcher.getManifoldByIndexInternal(i);
+			object1 = (com.bulletphysics.dynamics.RigidBody)manifold.getBody0();
+			object2 = (com.bulletphysics.dynamics.RigidBody)manifold.getBody1();
+			JBulletPhysicsObject obj1 = JBulletPhysicsObject.getJBulletPhysicsObject(object1);
+			JBulletPhysicsObject obj2 = JBulletPhysicsObject.getJBulletPhysicsObject(object2);
+			for (int j = 0; j < manifold.getNumContacts(); j++)
+			{	contactPoint = manifold.getContactPoint(j);
+				if (contactPoint.getDistance() < 0.0f)
+				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
+					break;
+				}
+			}
+		}
+	}
+
+	private float[] toFloatArray(double[] arr){ 
+		if (arr == null) return null;
+		int n = arr.length;
+		float[] ret = new float[n];
+		for (int i = 0; i < n; i++){ 
+			ret[i] = (float)arr[i];
+		}
+		return ret;
+	}
+
+	private double[] toDoubleArray(float[] arr){ 
+		if (arr == null) return null;
+		int n = arr.length;
+		double[] ret = new double[n];
+		for (int i = 0; i < n; i++){ 
+			ret[i] = (double)arr[i];
+		}
+		return ret;
 	}
 }
