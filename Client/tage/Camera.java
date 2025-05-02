@@ -18,7 +18,7 @@ public class Camera
 {
 	private Vector3f u, v, n;
 	private Vector3f defaultU, defaultV, defaultN;
-	private Vector3f location, defaultLocation;
+	private Vector3f location, defaultLocation, rotation;
 	private Matrix4f view, viewR, viewT;
 
 	/** instantiates a Camera object at location (0,0,1) and facing down the -Z axis towards the origin */
@@ -116,5 +116,15 @@ public class Camera
 		//Rotate V & N around U (pitch) by rotationAmount
 		n.rotateAxis(rotationAmount, u.x, u.y, u.z, n);
 		v.rotateAxis(rotationAmount, u.x, u.y, u.z, v);
+	}
+
+	/** Converts Rotation Matrix to a Vector3f of Euler angles */
+	public Matrix4f getLocalRotation(){
+		viewR.set(u.x(), v.x(), -n.x(), 0.0f,
+		u.y(), v.y(), -n.y(), 0.0f,
+		u.z(), v.z(), -n.z(), 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
+
+		return viewR;
 	}
 }

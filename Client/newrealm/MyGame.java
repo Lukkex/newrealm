@@ -1,6 +1,11 @@
 package newrealm;
 
 import tage.*;
+import tage.audio.AudioResource;
+import tage.audio.AudioResourceType;
+import tage.audio.IAudioManager;
+import tage.audio.Sound;
+import tage.audio.SoundType;
 import tage.shapes.*;
 
 import java.lang.Math;
@@ -15,6 +20,9 @@ import tage.input.*;
 import tage.input.action.*;
 import tage.networking.IGameConnection.ProtocolType;
 import tage.nodeControllers.*;
+import tage.physics.PhysicsEngine;
+import tage.physics.PhysicsObject;
+
 import java.util.Scanner;
 
 public class MyGame extends VariableFrameRateGame
@@ -22,6 +30,14 @@ public class MyGame extends VariableFrameRateGame
 	private static Engine engine;
 	private InputManager im;
 	private GhostManager gm;
+
+	//Sound
+	private IAudioManager audioMgr;
+	private Sound AttackSound, BGSound;
+
+	//Physics
+	private PhysicsEngine physicsEngine;
+	private PhysicsObject caps1P, caps2P, planeP;
 
 	private Robot robot;
 	private float curMouseX, curMouseY, centerX, centerY;
@@ -59,14 +75,15 @@ public class MyGame extends VariableFrameRateGame
 	private Vector3f hudRedColor = new Vector3f(1, 0, 0);
 	private Vector3f hudColor = hudWhiteColor;
 	private Vector3f loc;
+	private Matrix4f cameraRotation;
 
 	private GameObject avatar, lineX, lineY, lineZ, 
 	ghoul, floor, ground, chamber;
 
-	private ObjShape avatarS, ghostS, lineSx, 
+	private ObjShape ghostS, lineSx, 
 	lineSy, lineSz, floorS, groundS, chamberS;
 
-	private AnimatedShape ghoulS;
+	private AnimatedShape avatarS, ghoulS;
 
 	private TextureImage avatartx, ghosttx, linetx, ghoultx, 
 	floortx, groundtx, floorheightmap, groundheightmap, chambertx;
@@ -75,7 +92,6 @@ public class MyGame extends VariableFrameRateGame
 
 	private RotationController rc;
 	private BobbingController bc;
-	private CameraOrbit3D camOrbitController;
 
 	private String serverAddress;
 	private int serverPort;
@@ -141,7 +157,8 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	
-		avatarS = new ImportedModel("GHOULhead.obj");
+		avatarS = new AnimatedShape("Arms.rkm", "Arms.rks");
+		avatarS.loadAnimation("IDLE", "ArmsIdle.rka");
 		ghostS = new ImportedModel("GHOULhead.obj");
 		ghoulS = new AnimatedShape("Ghoul.rkm", "Ghoul.rks");
 		ghoulS.loadAnimation("IDLE", "GhoulIdle.rka");
@@ -182,10 +199,30 @@ public class MyGame extends VariableFrameRateGame
 		(engine.getSceneGraph()).setSkyBoxEnabled(true);
 	}
 
+		@Override
+	public void loadSounds()
+	{ AudioResource resource1, resource2;
+		audioMgr = engine.getAudioManager();
+		resource1 = audioMgr.createAudioResource("AttackSound.wav", AudioResourceType.AUDIO_SAMPLE);
+		resource2 = audioMgr.createAudioResource("KnowMyName.wav", AudioResourceType.AUDIO_SAMPLE);
+		AttackSound = new Sound(resource1, SoundType.SOUND_EFFECT, 10, false);
+		BGSound = new Sound(resource2, SoundType.SOUND_EFFECT, 10, true);
+		AttackSound.initialize(audioMgr);
+		BGSound.initialize(audioMgr);
+		AttackSound.setMaxDistance(10.0f);
+		AttackSound.setMinDistance(0.5f);
+		AttackSound.setRollOff(5.0f);
+		BGSound.setMaxDistance(10.0f);
+		BGSound.setMinDistance(0.5f);
+		BGSound.setRollOff(5.0f);
+	}
+
 	@Override
 	public void buildObjects(){	
 		// build avatar in the center of the window
 		avatar = new GameObject(GameObject.root(), avatarS, avatartx);
+
+		avatar.getRenderStates().setRenderHiddenFaces(false);
 		
 		lineX = new GameObject(GameObject.root(), lineSx, linetx);
 		lineY = new GameObject(GameObject.root(), lineSy, linetx);
@@ -199,10 +236,10 @@ public class MyGame extends VariableFrameRateGame
 		ground = new GameObject(GameObject.root(), groundS, groundtx);
 
 		ghoul = new GameObject(GameObject.root(), ghoulS, ghoultx);
-
 		chamber = new GameObject(GameObject.root(), chamberS, chambertx);
 
 		avatar.setLocalTranslation((new Matrix4f()).translation(0f,0f,0f));
+		avatar.setLocalScale((new Matrix4f()).scaling(0.3f));
 
 		ghoul.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
 		ghoul.setLocalScale((new Matrix4f()).scaling(1f));
@@ -291,12 +328,11 @@ public class MyGame extends VariableFrameRateGame
 
 		(engine.getRenderSystem()).setWindowDimensions(1900,1000);
 
-		// ------------- Setting up main camera and minimap camera -------------
+		// ------------- Setting up main camera -------------
 		
 		cam = (engine.getRenderSystem().getViewport("LEFT").getCamera());
 
 		String gamepadName = im.getFirstGamepadName();
-		camOrbitController = new CameraOrbit3D(cam, avatar, gamepadName, engine);
 
 		rc = new RotationController(engine, new Vector3f(0, 1, 0), 0.002f);
 		bc = new BobbingController(engine, 0.0005f);
@@ -311,7 +347,23 @@ public class MyGame extends VariableFrameRateGame
 
 		initMouseMode();
 
+		// Animation
+		avatarS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
 		ghoulS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
+	
+		// Camera
+		
+
+		// Sound
+		AttackSound.setLocation(avatar.getWorldLocation());
+		BGSound.setLocation(ground.getWorldLocation());
+		setEarParameters();
+		BGSound.play();
+	}
+
+	public void setEarParameters(){
+		audioMgr.getEar().setLocation(avatar.getWorldLocation());
+		audioMgr.getEar().setOrientation(cam.getN(), new Vector3f(0.0f, 1.0f, 0.0f));
 	}
 
 	@Override
@@ -325,11 +377,23 @@ public class MyGame extends VariableFrameRateGame
 			//Movement speed is based on elapsed time; InputManager gets updated and Action classes use this speed variable
 			movementSpeed = DEFAULT_SPEED * (float) elapsTime;
 
-			im.update((float) elapsTime);
+			//Animations
+			avatarS.updateAnimation();
 			ghoulS.updateAnimation();
+
+			//Input Manager
+			im.update((float) elapsTime);
+
+			//Networking
 			processNetworking((float) elapsTime);
 
-			camOrbitController.updateCameraPosition();
+			//Sound operations
+			AttackSound.setLocation(avatar.getWorldLocation());
+			setEarParameters();
+
+			//Camera operations
+			cam.setLocation(avatar.getWorldLocation());
+			cameraRotation = cam.getLocalRotation();
 
 			//avatarpin cannot go beneath the Y level of the floor plane
 			if (avatar.getWorldLocation().y() < floor.getWorldLocation().y())
@@ -455,6 +519,11 @@ public class MyGame extends VariableFrameRateGame
 	}
 
 	@Override
+	public void mousePressed(MouseEvent e){
+		AttackSound.play();
+	}
+
+	@Override
 	public void mouseMoved(MouseEvent e)
 	{ 	// if robot is recentering and the MouseEvent location is in the center,
 		// then this event was generated by the robot
@@ -469,8 +538,8 @@ public class MyGame extends VariableFrameRateGame
 			curMouseY = e.getYOnScreen();
 			float mouseDeltaX = prevMouseX - curMouseX;
 			float mouseDeltaY = prevMouseY - curMouseY;
-			camOrbitController.updateAzimuth(mouseDeltaX  * cameraMoveSpeed * (float)(elapsTime));
-			camOrbitController.updateElevation(mouseDeltaY  * cameraMoveSpeed * (float)(elapsTime));
+			cam.yaw(mouseDeltaX  * cameraMoveSpeed / (float)(elapsTime));
+			cam.pitch(mouseDeltaY  * cameraMoveSpeed / (float)(elapsTime));
 			prevMouseX = curMouseX;
 			prevMouseY = curMouseY;
 			// tell robot to put the cursor to the center (since user just moved it)
@@ -489,8 +558,8 @@ public class MyGame extends VariableFrameRateGame
 		float bottom = vw.getActualBottom();
 		float width = vw.getActualWidth();
 		float height = vw.getActualHeight();
-		int centerX = (int) (left + width/2.0f);
-		int centerY = (int) (bottom - height/2.0f);
+		centerX = (int) (left + width/2.0f);
+		centerY = (int) (bottom - height/2.0f);
 		isRecentering = true;
 		robot.mouseMove((int)centerX, (int)centerY);
 	}
