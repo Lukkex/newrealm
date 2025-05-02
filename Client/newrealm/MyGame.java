@@ -529,6 +529,18 @@ public class MyGame extends VariableFrameRateGame
 			else
 				enemyLight.disable();
 			
+			if (distance(ghoul.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
+				broadcastMessage = " | ENEMY IS CLOSING IN!";
+				hudColor = hudRedColor;
+			}
+			else {
+				broadcastMessage = "";
+				hudColor = hudWhiteColor;
+			}
+
+			if (distance(ghoul.getWorldLocation(), avatar.getWorldLocation()) <= 1.0f)
+				gameOver = true; //Game is over - the enemy caught you
+	
 			// Broadcast any new message and update HUD 1
 			broadcast(broadcastMessage, hudColor);
 		}
@@ -638,7 +650,7 @@ public class MyGame extends VariableFrameRateGame
 	public void mousePressed(MouseEvent e){
 		AttackSound.play();
 		GameObject bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
-		bulletOrb.setLocalScale((new Matrix4f()).scaling(0.2f));
+		bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
 		bulletOrb.setLocalLocation(avatar.getWorldLocation());
 		bulletOrb.setLocalRotation(avatar.getLocalRotation());
 		sc.addTarget(bulletOrb); //Shoots the bullet

@@ -116,7 +116,7 @@ public class Camera
 
 	/** Rotates Camera around its Z Axis (pitch) by the specifided rotation amount */
 	public void pitch(float rotationAmount){
-		System.out.println("Pitch angle: " + currentPitchAngle);
+		//System.out.println("Pitch angle: " + currentPitchAngle);
 		if (currentPitchAngle + rotationAmount > 1.3f || currentPitchAngle + rotationAmount < -1.3f){
 			//Exceeds pitch limit
 			return;
