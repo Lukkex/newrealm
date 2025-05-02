@@ -96,6 +96,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private RotationController rc;
 	private BobbingController bc;
+	private ShootingController sc;
 
 	private String serverAddress;
 	private int serverPort;
@@ -233,8 +234,8 @@ public class MyGame extends VariableFrameRateGame
 		audioMgr = engine.getAudioManager();
 		resource1 = audioMgr.createAudioResource("AttackSound.wav", AudioResourceType.AUDIO_SAMPLE);
 		resource2 = audioMgr.createAudioResource("KnowMyName.wav", AudioResourceType.AUDIO_SAMPLE);
-		AttackSound = new Sound(resource1, SoundType.SOUND_EFFECT, 10, false);
-		BGSound = new Sound(resource2, SoundType.SOUND_EFFECT, 10, true);
+		AttackSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, false);
+		BGSound = new Sound(resource2, SoundType.SOUND_EFFECT, 2, true);
 		AttackSound.initialize(audioMgr);
 		BGSound.initialize(audioMgr);
 		AttackSound.setMaxDistance(10.0f);
@@ -386,12 +387,15 @@ public class MyGame extends VariableFrameRateGame
 
 		rc = new RotationController(engine, new Vector3f(0, 1, 0), 0.002f);
 		bc = new BobbingController(engine, 0.0005f);
+		sc = new ShootingController(engine, 0.005f);
 
 		(engine.getSceneGraph()).addNodeController(rc);
 		(engine.getSceneGraph()).addNodeController(bc);
+		(engine.getSceneGraph()).addNodeController(sc);
 
 		rc.enable();
 		bc.enable();
+		sc.enable();
 
 		rc.addTarget(chamber);
 		rc.addTarget(stars1);
@@ -428,7 +432,7 @@ public class MyGame extends VariableFrameRateGame
 		tempTransform = toDoubleArray(translation.get(vals));
 		caps1P = (engine.getSceneGraph()).addPhysicsCapsuleX(
 		mass, tempTransform, radius, height);
-		caps1P.setBounciness(0.8f);
+		caps1P.setBounciness(3.8f);
 		eye.setPhysicsObject(caps1P);
 		//translation = new Matrix4f(dol2.getLocalTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
@@ -633,6 +637,11 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void mousePressed(MouseEvent e){
 		AttackSound.play();
+		GameObject bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
+		bulletOrb.setLocalScale((new Matrix4f()).scaling(0.2f));
+		bulletOrb.setLocalLocation(avatar.getWorldLocation());
+		bulletOrb.setLocalRotation(avatar.getLocalRotation());
+		sc.addTarget(bulletOrb); //Shoots the bullet
 	}
 
 	@Override
