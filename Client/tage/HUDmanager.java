@@ -30,7 +30,7 @@ public class HUDmanager
 
 	private TextureImage BGImage;
 	private String HUD1string, HUD2string;
-	private float[] HUD1color, HUD2color;
+	private float[] HUD1color, HUD2color, BGvertices;
 	private int HUD1font = GLUT.BITMAP_TIMES_ROMAN_24;
 	private int HUD2font = GLUT.BITMAP_TIMES_ROMAN_24;
 	private int HUD1x, HUD1y, HUD2x, HUD2y;
@@ -44,6 +44,7 @@ public class HUDmanager
 		HUD2string = "";
 		HUD1color = new float[3];
 		HUD2color = new float[3];
+		setupVertices();
 	}
 	
 	protected void setGLcanvas(GLCanvas g) { myCanvas = g; }
@@ -53,6 +54,9 @@ public class HUDmanager
 		GL4bc gl4bc = (GL4bc) gl4;
 
 		gl4.glUseProgram(0);
+
+		//BG Image
+		
 
 		gl4bc.glColor3f(HUD1color[0], HUD1color[1], HUD1color[2]);
 		gl4bc.glWindowPos2d (HUD1x, HUD1y);
@@ -88,5 +92,12 @@ public class HUDmanager
 	/** Sets the BG image for the HUD (transparent by default) */
 	public void setBGImage(TextureImage BG){
 		BGImage = BG;
+	}
+
+	private void setupVertices(){
+		BGvertices = new float[]{
+			-((engine.getRenderSystem()).getWidth())/2.0f, -((engine.getRenderSystem()).getHeight())/2.0f, 0.0f, 
+			((engine.getRenderSystem()).getWidth())/2.0f, ((engine.getRenderSystem()).getHeight())/2.0f, 0.0f
+		};
 	}
 }

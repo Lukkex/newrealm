@@ -1,0 +1,115 @@
+package newrealm;
+
+import java.util.*;
+import tage.GameObject;
+import tage.input.action.*;
+import net.java.games.input.Event;
+
+public class MapManager {
+    private int map1Width =  8;
+    private int map1Height = 20;
+    private ArrayList<Map> maps = new ArrayList<Map>();
+
+    private class Map {
+        private int mapID;
+        private char[][] layout;
+        private int width, height;
+        private int numOfLockedDoors;
+        private List<Integer> playerSpawnLocation;
+
+        public Map(){} //Empty map
+
+        public Map(int mapID, int width, int height){
+            this.mapID = mapID;
+            this.width = width;
+            this.height = height;
+        }
+
+        public void setMapLayout(char[][] layout){
+            this.layout = layout;
+
+            //Set Player location
+            for (int i = 0; i < this.width; i++){
+                for (int j = 0; j < this.height; j++){
+                    if (layout[i][j] == 'P'){
+                        playerSpawnLocation.add(i);
+                        playerSpawnLocation.add(j);
+                        return; 
+                    }
+                }
+            }
+
+            playerSpawnLocation = null;
+        }
+
+        public char[][] getMapLayout(){
+            return this.layout;
+        }
+
+        public int getMapWidth(){
+            return this.width;
+        }
+
+        public int getMapHeight(){
+            return this.height;
+        }
+
+        public List<Integer> getPlayerLocation(){
+            return this.playerSpawnLocation;
+        }
+
+        public void setKeyDoorPair(int mapID, int x, int y){
+
+        }
+    }
+
+    public MapManager(){
+        //Generate Game Map #1
+        //0 is empty space
+        //1 is wall
+        //2 is door
+        //3 is locked door
+        //4 is key
+        //G is ghoul enemy
+        //F is flying enemy
+        //A is aeon knight enemy
+        //P is where player starts
+        char[][] temp  = {
+            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1,  3,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  1,  1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  2,  0, 'G', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 'P', 1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        };
+
+        Map map1 = new Map(1, map1Height, map1Width);
+        map1.setMapLayout(temp);
+
+        maps.add(new Map()); //Empty map; will make it so Map #1 is at index 1 and not 0
+        maps.add(map1);
+    }
+
+    public char[][] getGameMap(int mapID){
+        return maps.get(mapID).getMapLayout();
+    }
+
+    /** Returns the state of the specified x, y location in the specified map */
+    public int getMapLocationState(int mapID, int x, int y){
+        return maps.get(mapID).getMapLayout()[x][y];
+    }
+
+    public int getMapWidth(int mapID){
+        return maps.get(mapID).getMapWidth();
+    }
+
+    public int getMapHeight(int mapID){
+        return maps.get(mapID).getMapHeight();
+    }
+
+    public List<Integer> getPlayerLocation(int mapID){
+        return maps.get(mapID).getPlayerLocation();
+    }
+}

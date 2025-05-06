@@ -29,6 +29,7 @@ import java.util.Scanner;
 
 public class MyGame extends VariableFrameRateGame
 {
+	//Engines and Managers
 	private static Engine engine;
 	private InputManager im;
 	private GhostManager gm;
@@ -41,38 +42,39 @@ public class MyGame extends VariableFrameRateGame
 	private PhysicsEngine physicsEngine;
 	private PhysicsObject caps1P, caps2P, planeP;
 	private float vals[] = new float[16];
+	private boolean isPhysicsWorldRendered = false;
 
+	//Camera Handling
+	private Camera cam, minimap;
 	CameraMinimap minimapController;
 
+	//Mouse Handling
 	private Robot robot;
 	private float curMouseX, curMouseY, centerX, centerY;
 	private float prevMouseX, prevMouseY;
 	private float cameraMoveSpeed = 0.01f;
 	private boolean isRecentering;
 
-	private Scanner scan = new Scanner(System.in);
-
-	private final String DEFAULT_IP_ADDRESS = "192.168.1.19";
-	private final int DEFAULT_PORT_NUMBER = 6010;
-
-	private int fluffyClouds, eyeRedSky; //skyboxes
+	//Skyboxes
+	private int fluffyClouds, eyeRedSky; 
 
 	private boolean hasWon, gameOver, callOnce = false;
 	private boolean worldAxisOn = true;
 
+	//Movement
 	private double lastFrameTime, currFrameTime, elapsTime;
 	private float yawAmount = 0.01f;
 	private float pitchAmount = 0.01f;
 	private final float DEFAULT_SPEED = 0.02f;
 	private float movementSpeed = DEFAULT_SPEED;
+	private float sprintSpeed = DEFAULT_SPEED * 2.0f;
 	private float lineLength = 5.0f;
 	private float height = 0.0f;
 
+	//HUD
 	private String broadcastMessage = "";
 
 	private int numOfDisarmed, vp2X, vp2Y = 0;
-
-	private Camera cam, minimap;
 
 	private Vector3f hudWhiteColor = new Vector3f(1,1,1);
 	private Vector3f hudGreenColor = new Vector3f(0.0f, 1.0f, 0.0f);
@@ -81,29 +83,54 @@ public class MyGame extends VariableFrameRateGame
 	private Vector3f hudColor = hudWhiteColor;
 	private Vector3f loc;
 
-	private GameObject avatar, lineX, lineY, lineZ, 
-	ghoul, floor, ground, chamber, cone, eye, stars1, stars2, sanctum, starLarge, upperChamber;
-
-	private ObjShape avatarS, ghostS, lineSx, 
-	lineSy, lineSz, floorS, groundS, chamberS, coneS, eyeS, stars1S, stars2S, sanctumS, starLargeS, upperChamberS;
-
-	private AnimatedShape avatarrS, ghoulS;
-
-	private TextureImage avatartx, ghosttx, linetx, ghoultx, 
-	floortx, groundtx, floorheightmap, groundheightmap, chambertx,
-	conetx, eyetx, stars1tx, stars2tx, sanctumtx, starLargetx, upperChambertx;
-
-	private Light light1, light2, light3, enemyLight;
-
+	//Node Controllers
 	private RotationController rc;
 	private BobbingController bc;
 	private ShootingController sc;
 
+	//Networking
 	private String serverAddress;
 	private int serverPort;
 	private ProtocolType serverProtocol;
 	private ProtocolClient protClient;
 	private boolean isClientConnected = false;
+
+	private Scanner scan = new Scanner(System.in);
+
+	private final String DEFAULT_IP_ADDRESS = "192.168.1.19";
+	private final int DEFAULT_PORT_NUMBER = 6010;
+
+	//Game
+	private GameObject avatar, lineX, lineY, lineZ, 
+	floor, ground, chamber, cone, eye, stars1, stars2, sanctum, starLarge, upperChamber;
+
+	private ObjShape ghostS, lineSx, 
+	lineSy, lineSz, floorS, groundS, chamberS, coneS, eyeS, stars1S, stars2S, sanctumS, starLargeS, upperChamberS;
+
+	private AnimatedShape avatarS;
+
+	private TextureImage avatartx, ghosttx, linetx, 
+	floortx, groundtx, floorheightmap, groundheightmap, chambertx,
+	conetx, eyetx, stars1tx, stars2tx, sanctumtx, starLargetx, upperChambertx;
+
+	//Lights
+	private Light light1, light2, light3, enemyLight;
+
+	//Enemies
+	private GameObject ghoul;
+	private AnimatedShape ghoulS;
+	private TextureImage ghoultx;
+
+	//Map #1
+	private MapManager mm = new MapManager(this);
+
+	private ObjShape wallS;
+	private TextureImage walltx;
+
+	private float mapUnitSize = 8.0f;
+	private float wallWidth = mapUnitSize/2.0f;
+	private float wallHeight = 6.0f;
+	private float floorSize = mm.getMapHeight(1) * mapUnitSize;
 
 	public MyGame(){
 		super();
@@ -163,14 +190,16 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	
-		avatarS = new ImportedModel("Arms.obj");
-		//avatarS = new AnimatedShape("Arms.rkm", "Arms.rks");
-		//avatarS.loadAnimation("IDLE", "ArmsIdle.rka");
+		//avatarS = new ImportedModel("Arms.obj");
+		avatarS = new AnimatedShape("Arms.rkm", "Arms.rks");
+		avatarS.loadAnimation("IDLE", "ArmsIdle.rka");
 		ghostS = new ImportedModel("GHOULhead.obj");
 		ghoulS = new AnimatedShape("Ghoul.rkm", "Ghoul.rks");
 		ghoulS.loadAnimation("IDLE", "GhoulIdle.rka");
 		floorS = new TerrainPlane(1000);
 		groundS = new TerrainPlane(100);
+
+		wallS = new ImportedModel("wall.obj");
 
 		chamberS = new ImportedModel("Chamber.obj");
 
@@ -219,6 +248,8 @@ public class MyGame extends VariableFrameRateGame
 		sanctumtx = new TextureImage("Sanctum.jpg");
 
 		upperChambertx = new TextureImage("Star.jpg");
+
+		walltx = new TextureImage("brick1.jpg");
 	}
 
 	@Override
@@ -249,6 +280,9 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void buildObjects(){	
+		//Generate the map
+		buildMap(1);
+
 		// build avatar in the center of the window
 		avatar = new GameObject(GameObject.root(), avatarS, avatartx);
 
@@ -275,7 +309,7 @@ public class MyGame extends VariableFrameRateGame
 		ghoul.setLocalScale((new Matrix4f()).scaling(0.1f));
 
 		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
-		floor.setLocalScale((new Matrix4f()).scaling(25f));
+		floor.setLocalScale((new Matrix4f()).scaling(floorSize));
 		//floor.setHeightMap(floorheightmap);
 		floor.getRenderStates().setTiling(1);
 		floor.getRenderStates().setTileFactor(10);
@@ -311,6 +345,28 @@ public class MyGame extends VariableFrameRateGame
 		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
 		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+	}
+
+	/** Builds the world's map using the Map.java class */
+	public void buildMap(int mapID){
+		int x,y; //temp variables
+
+		switch (mapID){
+			//Map #1
+			case 1:
+				for (int i = 0; i < mm.getMapWidth(1); i++){
+					for (int j = 0; j < mm.getMapHeight(1); j++){
+						if (mm.getMapLocationState(1, i, j) == 1){
+							x = i - (mm.getMapWidth(1)/2);
+							y = j- (mm.getMapHeight(1)/2);
+							GameObject wall = new GameObject(GameObject.root(), wallS, walltx);
+							wall.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
+							wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)));
+							
+						}
+					}
+			}
+		}
 	}
 
 	@Override
@@ -360,6 +416,7 @@ public class MyGame extends VariableFrameRateGame
 		PitchAction pitchUp = new PitchAction(this, protClient, pitchAmount);
 		PitchAction pitchDown = new PitchAction(this, protClient, -pitchAmount);
 		DisableAxisAction disableAxis = new DisableAxisAction(this);
+		SprintAction sprint = new SprintAction(this, protClient, sprintSpeed);
 
 		//Controller actions
 		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Axis.Y, move, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
@@ -373,6 +430,7 @@ public class MyGame extends VariableFrameRateGame
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.UP, pitchUp, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.DOWN, pitchDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.Q, disableAxis, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.LSHIFT, disableAxis, null);
 		
 		lastFrameTime = System.currentTimeMillis();
 		currFrameTime = System.currentTimeMillis();
@@ -411,7 +469,7 @@ public class MyGame extends VariableFrameRateGame
 		initMouseMode();
 
 		// Animation
-		//avatarS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
+		avatarS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
 		ghoulS.playAnimation("IDLE", 0.1f, AnimatedShape.EndType.LOOP, 0);
 	
 		// Camera
@@ -421,7 +479,7 @@ public class MyGame extends VariableFrameRateGame
 		AttackSound.setLocation(avatar.getWorldLocation());
 		BGSound.setLocation(ground.getWorldLocation());
 		setEarParameters();
-		BGSound.play();
+		//BGSound.play();
 
 		//Physics
 		// --- initialize physics system ---
@@ -438,7 +496,7 @@ public class MyGame extends VariableFrameRateGame
 		tempTransform = toDoubleArray(translation.get(vals));
 		caps1P = (engine.getSceneGraph()).addPhysicsCapsuleX(
 		mass, tempTransform, radius, height);
-		caps1P.setBounciness(3.8f);
+		caps1P.setBounciness(0.7f);
 		eye.setPhysicsObject(caps1P);
 		//translation = new Matrix4f(dol2.getLocalTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
@@ -500,7 +558,7 @@ public class MyGame extends VariableFrameRateGame
 			movementSpeed = DEFAULT_SPEED * (float) elapsTime;
 
 			//Animations
-			//avatarS.updateAnimation();
+			avatarS.updateAnimation();
 			ghoulS.updateAnimation();
 
 			//Input Manager
@@ -665,6 +723,7 @@ public class MyGame extends VariableFrameRateGame
 		rs.getGLCanvas().setCursor(faceCursor);
 	}
 
+	//Add this later for controller, Action class specifically added for gamepads
 	@Override
 	public void mousePressed(MouseEvent e){
 		AttackSound.play();
@@ -672,6 +731,12 @@ public class MyGame extends VariableFrameRateGame
 		bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
 		bulletOrb.setLocalLocation(avatar.getWorldLocation());
 		bulletOrb.setLocalRotation(avatar.getLocalRotation());
+		double[ ] tempTransform;
+		Matrix4f translation = new Matrix4f(bulletOrb.getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		caps2P = (engine.getSceneGraph()).addPhysicsCapsuleX(
+			1.0f, tempTransform, 1.0f, height);
+		caps2P.setBounciness(0.8f);
 		sc.addTarget(bulletOrb); //Shoots the bullet
 	}
 
@@ -802,4 +867,26 @@ public class MyGame extends VariableFrameRateGame
 		}
 		return ret;
 	}
+
+	// ---------- MISC. KEYBOARD-ONLY INPUTS ----------------
+	//KeyListener implemented functions
+	@Override
+	public void keyPressed(KeyEvent e){	
+		switch (e.getKeyCode()){
+			case KeyEvent.VK_0:
+				isPhysicsWorldRendered = !isPhysicsWorldRendered;
+				if (isPhysicsWorldRendered)
+					engine.enablePhysicsWorldRender();
+				else
+					engine.disablePhysicsWorldRender();
+				break;
+		}
+	}
+
+	//Required implementations, but not used
+	@Override
+	public void keyReleased(KeyEvent e){}
+
+	@Override
+	public void keyTyped(KeyEvent e){}
 }
