@@ -101,31 +101,35 @@ public class Camera
 	// ------------ MY CUSTOM METHODS -----------------
 
 	/** Moves Camera forward by the specifided movement amount */
-	public void move(float movementAmount){
-		this.setLocation(this.getLocation().add(this.getN().mul(movementAmount)));
-	}
-
-	/** Rotates Camera around its Y Axis (yaw) by the specifided rotation amount */
-	public void yaw(float rotationAmount){
-		//Rotate U & N around V (yaw) by rotationAmount
+	public void yaw(float rotationAmount) {
+		// Rotate N and U around global Y axis
 		n.rotateAxis(rotationAmount, 0.0f, 1.0f, 0.0f);
 		n.cross(0.0f, 1.0f, 0.0f, u);
+		u.normalize();
 		u.rotateAxis(rotationAmount, v.x, v.y, v.z);
 		u.cross(n, v);
-	}
+		v.normalize();
 
-	/** Rotates Camera around its Z Axis (pitch) by the specifided rotation amount */
-	public void pitch(float rotationAmount){
-		//System.out.println("Pitch angle: " + currentPitchAngle);
-		if (currentPitchAngle + rotationAmount > 1.3f || currentPitchAngle + rotationAmount < -1.3f){
-			//Exceeds pitch limit
-			return;
+		System.out.println("Camera Vectors:\nU: " + u.toString() + "\nV: " + v.toString() + "\nN: " + n.toString() + "\n");
+	}
+	
+	/** Rotates Camera around its X Axis (pitch) by the specified rotation amount */
+	public void pitch(float rotationAmount) {
+		//Check pitch limits to prevent flipping
+		if (currentPitchAngle + rotationAmount > 1.3f || currentPitchAngle + rotationAmount < -1.3f) {
+			return; // Exceeds pitch limit
 		}
-		//Rotate V & N around U (pitch) by rotationAmount
+		
+		// Rotate V & N around U (pitch) by rotationAmount
 		n.rotateAxis(rotationAmount, u.x, u.y, u.z);
 		v.rotateAxis(rotationAmount, u.x, u.y, u.z);
+		
+		v.negate();
+		v.normalize(); 
+		v.cross(n, u); 
+		u.normalize();
+		u.cross(n, v);
 
-		v.cross(n, u);
 		currentPitchAngle += rotationAmount;
 	}
 

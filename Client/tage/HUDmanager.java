@@ -28,6 +28,7 @@ public class HUDmanager
 	private GLUT glut = new GLUT();
 	private Engine engine;
 
+	private TextureImage BGImage;
 	private String HUD1string, HUD2string;
 	private float[] HUD1color, HUD2color;
 	private int HUD1font = GLUT.BITMAP_TIMES_ROMAN_24;
@@ -83,4 +84,9 @@ public class HUDmanager
 
 	/** sets HUD #2 font - available fonts are listed above. */
 	public void setHUD2font(int font) { HUD2font = font; }
+
+	/** Sets the BG image for the HUD (transparent by default) */
+	public void setBGImage(TextureImage BG){
+		BGImage = BG;
+	}
 }
