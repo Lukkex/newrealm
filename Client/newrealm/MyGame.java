@@ -42,6 +42,8 @@ public class MyGame extends VariableFrameRateGame
 	private PhysicsObject caps1P, caps2P, planeP;
 	private float vals[] = new float[16];
 
+	CameraMinimap minimapController;
+
 	private Robot robot;
 	private float curMouseX, curMouseY, centerX, centerY;
 	private float prevMouseX, prevMouseY;
@@ -78,7 +80,6 @@ public class MyGame extends VariableFrameRateGame
 	private Vector3f hudRedColor = new Vector3f(1, 0, 0);
 	private Vector3f hudColor = hudWhiteColor;
 	private Vector3f loc;
-	private Matrix4f cameraRotation;
 
 	private GameObject avatar, lineX, lineY, lineZ, 
 	ghoul, floor, ground, chamber, cone, eye, stars1, stars2, sanctum, starLarge, upperChamber;
@@ -383,7 +384,12 @@ public class MyGame extends VariableFrameRateGame
 		
 		cam = (engine.getRenderSystem().getViewport("LEFT").getCamera());
 
+		//* Minimap Camera for Debugging */
+		minimap = (engine.getRenderSystem().getViewport("RIGHT").getCamera());
+
 		String gamepadName = im.getFirstGamepadName();
+
+		minimapController = new CameraMinimap(minimap, floor, gamepadName, engine);
 
 		rc = new RotationController(engine, new Vector3f(0, 1, 0), 0.002f);
 		bc = new BobbingController(engine, 0.0005f);
@@ -459,10 +465,12 @@ public class MyGame extends VariableFrameRateGame
 	public void update(){
 		if (!gameOver && !hasWon){	
 			//Update elapsed time based on current frame and last frame's time
+			recenterMouse();
 			lastFrameTime = currFrameTime;
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
 
+			minimapController.updateCameraPosition();
 			avatar.setLocalRotation(cam.getLocalRotation());
 
 			//Physics
@@ -507,7 +515,6 @@ public class MyGame extends VariableFrameRateGame
 
 			//Camera operations
 			cam.setLocation(avatar.getWorldLocation());
-			cameraRotation = cam.getLocalRotation();
 
 			//avatarpin cannot go beneath the Y level of the floor plane
 			if (avatar.getWorldLocation().y() < floor.getWorldLocation().y())
@@ -571,6 +578,18 @@ public class MyGame extends VariableFrameRateGame
 		leftCamera.setU(new Vector3f(1,0,0));
 		leftCamera.setV(new Vector3f(0,1,0));
 		leftCamera.setN(new Vector3f(0,0,-1));
+
+		//Minimap
+		(engine.getRenderSystem()).addViewport("RIGHT",.75f,0,.25f,.25f);
+		Viewport rightVp = (engine.getRenderSystem()).getViewport("RIGHT");
+		Camera rightCamera = rightVp.getCamera();
+		rightVp.setHasBorder(true);
+		rightVp.setBorderWidth(1);
+		rightVp.setBorderColor(1.0f, 1.0f, 1.0f);
+		rightCamera.setLocation(new Vector3f(0,2,0));
+		rightCamera.setU(new Vector3f(1,0,0));
+		rightCamera.setV(new Vector3f(0,0,-1));
+		rightCamera.setN(new Vector3f(0,-1,0));
 	}
 
 	//Broadcasting function that can announce a broadcast message on the HUD

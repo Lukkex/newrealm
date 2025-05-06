@@ -124,14 +124,23 @@ public class Camera
 		//Rotate V & N around U (pitch) by rotationAmount
 		n.rotateAxis(rotationAmount, u.x, u.y, u.z);
 		v.rotateAxis(rotationAmount, u.x, u.y, u.z);
+
+		v.cross(n, u);
 		currentPitchAngle += rotationAmount;
+	}
+
+	/** Normalizes Camera Axes */
+	private void normalizeAxes(){
+		v = v.normalize();
+		n = u.cross(v).normalize();
+		u = n.cross(v).normalize();
 	}
 
 	/** Converts Rotation Matrix to a Vector3f of Euler angles */
 	public Matrix4f getLocalRotation(){
-		viewR.set(u.x(), v.x(), n.x(), 0.0f,
-		u.y(), v.y(), n.y(), 0.0f,
-		u.z(), v.z(), n.z(), 0.0f,
+		viewR.set(u.x(), u.y(), u.z(), 0.0f,
+		v.x(), v.y(), v.z(), 0.0f,
+		n.x(), n.y(), n.z(), 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
 
 		return viewR;
