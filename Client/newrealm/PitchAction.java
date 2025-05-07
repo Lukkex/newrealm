@@ -19,7 +19,7 @@ public class PitchAction extends AbstractInputAction{
     @Override
     public void performAction(float time, Event e){
         obj = game.getAvatar();
-        obj.pitch(pitchSpeed * e.getValue());
+        obj.pitch(pitchSpeed * (float) game.getDeltaTime() * e.getValue());
         protClient.sendRotateMessage(obj.getWorldRotation());
     }
 }

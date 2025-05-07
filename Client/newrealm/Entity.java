@@ -3,6 +3,7 @@ package newrealm;
 import java.util.UUID;
 
 import tage.*;
+import tage.shapes.*;
 import org.joml.*;
 
 // A ghost MUST be connected as a child of the root,
@@ -13,17 +14,29 @@ import org.joml.*;
 
 public class Entity extends GameObject
 {
-	UUID uuid;
-	GameObject go;
+	private UUID uuid;
+	private GameObject go;
+	private float movementSpeed = 0.01f; //Default Speed
+	private String type = "";
 
 	public Entity(GameObject go){
 		this.go = go;
 	}
 
-	public Entity(UUID id, ObjShape s, TextureImage t, Vector3f p) {	
+	public Entity(UUID id, AnimatedShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
 		super(GameObject.root(), s, t);
 		uuid = id;
 		setPosition(p);
+		this.getRenderStates().setRenderHiddenFaces(renderHidden);
+		this.type = type;
+	}
+
+	public Entity(UUID id, ObjShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
+		super(GameObject.root(), s, t);
+		uuid = id;
+		setPosition(p);
+		this.getRenderStates().setRenderHiddenFaces(renderHidden);
+		this.type = type;
 	}
 	
 	public UUID getID() { return uuid; }
@@ -37,4 +50,10 @@ public class Entity extends GameObject
 
 	public void setRotation(Matrix4f m) { setLocalRotation(m); }
 	public Matrix4f getRotation() { return getWorldRotation(); }
+
+	public void setSpeed(float speed) { movementSpeed = speed; }
+	public float getSpeed() { return movementSpeed; }
+
+	public void setType(String type) { this.type = type; }
+	public String getType() { return this.type; }
 }

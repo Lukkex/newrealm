@@ -19,7 +19,7 @@ public class MoveAction extends AbstractInputAction{
     @Override
     public void performAction(float time, Event e){
         obj = game.getAvatar();
-        obj.move(movementSpeed * e.getValue());
+        obj.move(movementSpeed * (float) game.getDeltaTime() * e.getValue());
         protClient.sendMoveMessage(obj.getWorldLocation());
     }
 }

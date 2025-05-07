@@ -26,6 +26,7 @@ import tage.physics.JBullet.JBulletPhysicsEngine;
 import tage.physics.JBullet.JBulletPhysicsObject;
 
 import java.util.Scanner;
+import java.util.UUID;
 
 public class MyGame extends VariableFrameRateGame
 {
@@ -78,11 +79,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private int numOfDisarmed, vp2X, vp2Y = 0;
 
-	private Vector3f hudWhiteColor = new Vector3f(1,1,1);
-	private Vector3f hudGreenColor = new Vector3f(0.0f, 1.0f, 0.0f);
-	private Vector3f hudYellowColor = new Vector3f(1.0f, 0.729f, 0.0f);
-	private Vector3f hudRedColor = new Vector3f(1, 0, 0);
-	private Vector3f hudColor = hudWhiteColor;
+	private Vector3f hudColor = Constants.hudWhiteColor;
 	private Vector3f loc;
 
 	//Node Controllers
@@ -116,10 +113,9 @@ public class MyGame extends VariableFrameRateGame
 	conetx, eyetx, stars1tx, stars2tx, sanctumtx, starLargetx, upperChambertx;
 
 	//Lights
-	private Light light1, light2, light3, enemyLight;
+	private Light light1, light2, light3;
 
 	//Enemies
-	private GameObject ghoul;
 	private AnimatedShape ghoulS;
 	private TextureImage ghoultx;
 
@@ -130,13 +126,17 @@ public class MyGame extends VariableFrameRateGame
 	private float mapUnitSize = 8.0f;
 	private float wallWidth = mapUnitSize/2.0f;
 	private float wallHeight = 6.0f;
-	private float floorSize = mm.getMapHeight(1) * mapUnitSize;
+	private float floorSize;
 
 	public MyGame(){
 		super();
-		try {
-			gm = new GhostManager(this);
+		gm = new GhostManager(this);
+		em = new EntityManager(this, protClient);
+		mm = new MapManager();
 
+		floorSize = mm.getMapHeight(1) * mapUnitSize;
+
+		try {
 			System.out.println("\nIP Address (Enter for default - " + DEFAULT_IP_ADDRESS + "): ");
 			String address = scan.nextLine();
 
@@ -167,6 +167,9 @@ public class MyGame extends VariableFrameRateGame
 		gm = new GhostManager(this);
 		em = new EntityManager(this, protClient);
 		mm = new MapManager();
+		
+		floorSize = mm.getMapHeight(1) * mapUnitSize;
+
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
 		if (protocol.toUpperCase().compareTo("TCP") == 0)
@@ -350,6 +353,7 @@ public class MyGame extends VariableFrameRateGame
 		//temp variables
 		int x = 0;
 		int y = 0;
+		int entityListSize = em.getEntityListSize();
 
 		for (int i = 0; i < mm.getMapWidth(1); i++){
 			for (int j = 0; j < mm.getMapHeight(1); j++){
@@ -369,11 +373,14 @@ public class MyGame extends VariableFrameRateGame
 				}
 				//Create a Ghoul Spawn at location
 				else if (mm.getMapLocationState(1, i, j) == 'G'){
-					GameObject ghoul = new GameObject(GameObject.root(), ghoulS, ghoultx);
-					ghoul.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)));
-					ghoul.getRenderStates().setRenderHiddenFaces(true);
-					ghoul.setLocalScale((new Matrix4f()).scaling(0.1f));
-					em.add(ghoul);
+					try {
+						em.createEntity(UUID.fromString("" + entityListSize), ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul");
+					}
+					catch (Exception e){
+						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+					}
+
+					entityListSize++;
 				}
 			}
 		}
@@ -405,16 +412,9 @@ public class MyGame extends VariableFrameRateGame
 		light3.setDiffuse(1.0f, 0.729f, 0.0f);
 		light3.setSpecular(1.0f, 0.729f, 0.0f);
 
-		//Light that is inside of the enemy enemy object
-		enemyLight = new Light();
-		enemyLight.setLocation(ghoul.getWorldLocation());
-		enemyLight.setDiffuse(1.0f, 0.0f, 0.0f);
-		enemyLight.setSpecular(1.0f, 0.0f, 0.0f);
-
 		(engine.getSceneGraph()).addLight(light1);
 		(engine.getSceneGraph()).addLight(light2);
 		(engine.getSceneGraph()).addLight(light3);
-		(engine.getSceneGraph()).addLight(enemyLight);
 	}
 
 	@Override
@@ -578,6 +578,9 @@ public class MyGame extends VariableFrameRateGame
 			//Input Manager
 			im.update((float) elapsTime);
 
+			//Entity Manager iterates through all entities
+			em.updateAllEntities((float) elapsTime);
+
 			//Networking
 			processNetworking((float) elapsTime);
 
@@ -588,38 +591,15 @@ public class MyGame extends VariableFrameRateGame
 			//Camera operations
 			cam.setLocation(avatar.getWorldLocation());
 
-			//avatarpin cannot go beneath the Y level of the floor plane
+			//avatar cannot go beneath the Y level of the floor plane
 			if (avatar.getWorldLocation().y() < floor.getWorldLocation().y())
 				avatar.setLocalLocation((avatar.getWorldLocation().mul(new Vector3f(1f, 0f, 1f))).add(new Vector3f(0f, -1f, 0f)));
 
-			//Set avatarphin to height of height map to make them go over the peaks
+			//Set avatar to height of height map to make them go over the peaks
 			loc = avatar.getWorldLocation();
 			height = floor.getHeight(loc.x(), loc.z());
 			avatar.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
 
-			//Enemy ManualCube continues to look towards and follow the camera
-			ghoul.lookAt(avatar.getWorldLocation());
-			ghoul.move(0.01f);
-			enemyLight.setLocation(ghoul.getWorldLocation());
-			
-			//Enemy light is always inside of enemy cube, and will flicker based on the elapsed time
-			if (Math.sin(currFrameTime/100) <= 0.5)
-				enemyLight.enable();
-			else
-				enemyLight.disable();
-			
-			if (distance(ghoul.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
-				broadcastMessage = " | ENEMY IS CLOSING IN!";
-				hudColor = hudRedColor;
-			}
-			else {
-				broadcastMessage = "";
-				hudColor = hudWhiteColor;
-			}
-
-			if (distance(ghoul.getWorldLocation(), avatar.getWorldLocation()) <= 1.0f)
-				gameOver = true; //Game is over - the enemy caught you
-	
 			// Broadcast any new message and update HUD 1
 			broadcast(broadcastMessage, hudColor);
 		}
@@ -666,12 +646,20 @@ public class MyGame extends VariableFrameRateGame
 
 	//Broadcasting function that can announce a broadcast message on the HUD
 	public void broadcast(String message){
-		(engine.getHUDmanager()).setHUD1("Score: " + Integer.toString(numOfDisarmed) + message, hudWhiteColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("Score: " + Integer.toString(numOfDisarmed) + message, Constants.hudWhiteColor, 15, 15);
 	}
 
 	//Overloaded in case you want something other than the default white color for the HUD
 	public void broadcast(String message, Vector3f HUDColor){
 		(engine.getHUDmanager()).setHUD1("Score: " + Integer.toString(numOfDisarmed) + message, HUDColor, 15, 15);
+	}
+
+	public void setBroadcastMessage(String message){
+		broadcastMessage = message;
+	}
+
+	public void setBroadcastMessageColor(Vector3f HUDColor){
+		this.hudColor = HUDColor;
 	}
 
 	//Helper function for determining distance between 2 Vector3f Objects
@@ -687,6 +675,10 @@ public class MyGame extends VariableFrameRateGame
 
 	public GameObject getAvatar(){
 		return avatar;
+	}
+
+	public double getDeltaTime(){
+		return elapsTime;
 	}
 
 
@@ -903,4 +895,13 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void keyTyped(KeyEvent e){}
+
+	// ---------- REST OF GETTERS AND SETTERS ----------------
+	public void Win(){
+		hasWon = true;
+	}
+	
+	public void GameOver(){
+		gameOver = true;
+	}
 }

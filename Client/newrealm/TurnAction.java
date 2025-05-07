@@ -19,7 +19,7 @@ public class TurnAction extends AbstractInputAction{
     @Override
     public void performAction(float time, Event e){
         obj = game.getAvatar();
-        obj.yaw(turnSpeed * e.getValue());
+        obj.yaw(turnSpeed * (float) game.getDeltaTime() * e.getValue());
         protClient.sendRotateMessage(obj.getWorldRotation());
     }
 }
