@@ -109,8 +109,6 @@ public class Camera
 		u.rotateAxis(rotationAmount, v.x, v.y, v.z);
 		u.cross(n, v);
 		v.normalize();
-
-		System.out.println("Camera Vectors:\nU: " + u.toString() + "\nV: " + v.toString() + "\nN: " + n.toString() + "\n");
 	}
 	
 	/** Rotates Camera around its X Axis (pitch) by the specified rotation amount */

@@ -235,7 +235,22 @@ public class GameObject
 
 	/** Moves GameObject forward by the specified movement amount */
 	public void move(float movementAmount){
-		this.setLocalLocation(this.getLocalLocation().add(this.getLocalForwardVector().mul(movementAmount)));
+		if (this.getPhysicsObject() == null)
+			this.setLocalLocation(this.getLocalLocation().add(this.getLocalForwardVector().mul(movementAmount)));
+		else {
+			Vector3f force = new Vector3f(this.getLocalForwardVector().mul(movementAmount));
+			this.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+		}
+	}
+
+	/** Strafes GameObject left/right by the specified movement amount */
+	public void strafe(float movementAmount){
+		if (this.getPhysicsObject() == null)
+			this.setLocalLocation(this.getLocalLocation().add(this.getLocalRightVector().mul(movementAmount)));
+		else {
+			Vector3f force = new Vector3f(this.getLocalRightVector().mul(movementAmount));
+			this.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+		}
 	}
 
 	/** Rotates GameObject around the GLOBAL Y Axis (yaw) by the specified rotation amount */

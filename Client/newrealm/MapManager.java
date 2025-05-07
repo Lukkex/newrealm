@@ -6,7 +6,7 @@ import tage.input.action.*;
 import net.java.games.input.Event;
 
 public class MapManager {
-    private int map1Width =  8;
+    private int map1Width =  9;
     private int map1Height = 20;
     private ArrayList<Map> maps = new ArrayList<Map>();
 
@@ -67,21 +67,25 @@ public class MapManager {
         //Generate Game Map #1
         //0 is empty space
         //1 is wall
-        //2 is door
-        //3 is locked door
-        //4 is key
+        //2 is door West-East
+        //3 is door North-South
+        //4 is door key
+        //5 is chest
+        //6 is chest key
         //G is ghoul enemy
         //F is flying enemy
         //A is aeon knight enemy
         //P is where player starts
+
         char[][] temp  = {
             {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-            {1,  3,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  0,  1,  0,  1,  1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  5,  1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  3,  1,  1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1,  0,  2,  0, 'G', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, 'P', 1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 'P', 1,  0,  0,  0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
             {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
         };
 

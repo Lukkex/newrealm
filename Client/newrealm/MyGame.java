@@ -70,6 +70,7 @@ public class MyGame extends VariableFrameRateGame
 	private float pitchAmount = 0.01f;
 	private final float DEFAULT_SPEED = 0.02f;
 	private float movementSpeed = DEFAULT_SPEED;
+	private float bulletForce = DEFAULT_SPEED * 20.0f;
 	private float sprintSpeed = DEFAULT_SPEED * 2.0f;
 	private float lineLength = 5.0f;
 	private float height = 0.0f;
@@ -120,12 +121,12 @@ public class MyGame extends VariableFrameRateGame
 	private TextureImage ghoultx;
 
 	//Map #1
-	private ObjShape wallS;
-	private TextureImage walltx;
+	private ObjShape wallS, doorS;
+	private TextureImage walltx, doortx;
 
 	private float mapUnitSize = 8.0f;
 	private float wallWidth = mapUnitSize/2.0f;
-	private float wallHeight = 6.0f;
+	private float wallHeight = 3.0f;
 	private float floorSize;
 
 	public MyGame(){
@@ -205,6 +206,7 @@ public class MyGame extends VariableFrameRateGame
 		groundS = new TerrainPlane(100);
 
 		wallS = new ImportedModel("wall.obj");
+		doorS = new ImportedModel("door.obj");
 
 		chamberS = new ImportedModel("Chamber.obj");
 
@@ -228,7 +230,7 @@ public class MyGame extends VariableFrameRateGame
 		avatartx = new TextureImage("GHOUL.jpg");
 		ghosttx = new TextureImage("GHOUL.jpg");
 
-		floortx = new TextureImage("ground.jpg");
+		floortx = new TextureImage("floor.png");
 		floorheightmap = new TextureImage("floorheightmap.jpg");
 
 		groundtx = new TextureImage("wireG.png");
@@ -254,7 +256,9 @@ public class MyGame extends VariableFrameRateGame
 
 		upperChambertx = new TextureImage("Star.jpg");
 
-		walltx = new TextureImage("brick1.jpg");
+		walltx = new TextureImage("wall.png");
+
+		doortx = new TextureImage("door.png");
 	}
 
 	@Override
@@ -290,6 +294,7 @@ public class MyGame extends VariableFrameRateGame
 
 		avatar.getRenderStates().setRenderHiddenFaces(false);
 		
+		
 		lineX = new GameObject(GameObject.root(), lineSx, linetx);
 		lineY = new GameObject(GameObject.root(), lineSy, linetx);
 		lineZ = new GameObject(GameObject.root(), lineSz, linetx);
@@ -307,7 +312,8 @@ public class MyGame extends VariableFrameRateGame
 		floor.setLocalScale((new Matrix4f()).scaling(floorSize));
 		//floor.setHeightMap(floorheightmap);
 		floor.getRenderStates().setTiling(1);
-		floor.getRenderStates().setTileFactor(10);
+		floor.getRenderStates().setTileFactor((int) floorSize);
+		floor.getRenderStates().hasLighting(false);
 
 		ground.setLocalTranslation((new Matrix4f()).translation(0f, -200f, 0f));
 		ground.setLocalScale((new Matrix4f()).scaling(100f));
@@ -325,6 +331,7 @@ public class MyGame extends VariableFrameRateGame
 		stars2 = new GameObject(GameObject.root(), stars2S, stars2tx);
 		starLarge = new GameObject(GameObject.root(), starLargeS, starLargetx);
 		sanctum = new GameObject(GameObject.root(), sanctumS, sanctumtx);
+		sanctum.setLocalRotation(new Matrix4f().rotationY((float) Math.toRadians(180)));
 		upperChamber = new GameObject(GameObject.root(), upperChamberS, upperChambertx);
 
 		cone.setLocalScale((new Matrix4f()).scaling(8f));
@@ -364,12 +371,70 @@ public class MyGame extends VariableFrameRateGame
 				}
 				if (mm.getMapLocationState(1, i, j) == 1){
 					GameObject wall = new GameObject(GameObject.root(), wallS, walltx);
+					
+					float[] wallVerts = wallS.getVertices();
+					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+
 					wall.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
-					wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)));
+					wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
 					wall.setLocalRotation((new Matrix4f()).rotationX((float) Math.toRadians(-90)));
 					wall.getRenderStates().setRenderHiddenFaces(true);
 					wall.getRenderStates().setTiling(1);
 					wall.getRenderStates().setTileFactor(10);
+					wall.getRenderStates().hasLighting(false);
+
+					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth};
+					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
+					cube.setBounciness(0);
+					wall.setPhysicsObject(cube);
+				}
+				//Create W-E door at location
+				else if (mm.getMapLocationState(1, i, j) == 2){
+					GameObject door = new GameObject(GameObject.root(), doorS, doortx);
+
+					float[] wallVerts = wallS.getVertices();
+					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+
+					door.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
+					door.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
+					door.setLocalRotation((new Matrix4f()).rotationX((float) Math.toRadians(-90)));
+					
+					door.getRenderStates().setRenderHiddenFaces(true);
+					door.getRenderStates().setTiling(1);
+					door.getRenderStates().hasLighting(false);
+					
+
+					//17.53% the width of typical wall
+					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth * 0.1753f};
+					
+					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
+					cube.setBounciness(0);
+
+					door.setPhysicsObject(cube);
+				}
+				//Create N-S door at location
+				else if (mm.getMapLocationState(1, i, j) == 3){
+					GameObject door = new GameObject(GameObject.root(), doorS, doortx);
+
+					float[] wallVerts = wallS.getVertices();
+					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+
+					door.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
+					door.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
+					door.setLocalRotation((new Matrix4f()).rotateLocalY((float) Math.toRadians(-90)).rotationX((float) Math.toRadians(-90)));
+					
+					door.getRenderStates().setRenderHiddenFaces(true);
+					door.getRenderStates().setTiling(1);
+					door.getRenderStates().hasLighting(false);
+					
+
+					//17.53% the width of typical wall
+					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth * 0.1753f};
+					
+					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
+					cube.setBounciness(0);
+
+					door.setPhysicsObject(cube);
 				}
 				//Create a Ghoul Spawn at location
 				else if (mm.getMapLocationState(1, i, j) == 'G'){
@@ -423,10 +488,12 @@ public class MyGame extends VariableFrameRateGame
 
 		setupNetworking();
 
-		MoveAction move = new MoveAction(this, protClient, movementSpeed);
-		MoveAction moveBackward = new MoveAction(this, protClient, -movementSpeed);
-		TurnAction turn = new TurnAction(this, protClient, yawAmount);
-		TurnAction turnRight = new TurnAction(this, protClient, -yawAmount);
+		MoveAction move = new MoveAction(this, protClient, 1);
+		MoveAction moveBackward = new MoveAction(this, protClient, -1);
+		StrafeAction strafe = new StrafeAction(this, protClient, 1);
+		StrafeAction strafeRight = new StrafeAction(this, protClient, -1);
+		TurnAction turn = new TurnAction(this, protClient, yawAmount); //Gamepad only
+		TurnAction turnRight = new TurnAction(this, protClient, -yawAmount); //Gamepad only
 		PitchAction pitchUp = new PitchAction(this, protClient, pitchAmount);
 		PitchAction pitchDown = new PitchAction(this, protClient, -pitchAmount);
 		DisableAxisAction disableAxis = new DisableAxisAction(this);
@@ -439,12 +506,12 @@ public class MyGame extends VariableFrameRateGame
 		//Keyboard actions
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.W, move, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.S, moveBackward, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.A, turn, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.D, turnRight, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.A, strafe, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.D, strafeRight, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.UP, pitchUp, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.DOWN, pitchDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.Q, disableAxis, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.LSHIFT, disableAxis, null);
+		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.LSHIFT, sprint, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		
 		lastFrameTime = System.currentTimeMillis();
 		currFrameTime = System.currentTimeMillis();
@@ -538,6 +605,7 @@ public class MyGame extends VariableFrameRateGame
 		if (!gameOver && !hasWon){	
 			//Update elapsed time based on current frame and last frame's time
 			recenterMouse();
+			movementSpeed = DEFAULT_SPEED; //Resets; if not sprinting, will be normal speed
 			lastFrameTime = currFrameTime;
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
@@ -735,15 +803,17 @@ public class MyGame extends VariableFrameRateGame
 		AttackSound.play();
 		GameObject bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
 		bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
-		bulletOrb.setLocalLocation(avatar.getWorldLocation());
+		bulletOrb.setLocalLocation(cam.getLocation());
 		bulletOrb.setLocalRotation(avatar.getLocalRotation());
 		double[ ] tempTransform;
 		Matrix4f translation = new Matrix4f(bulletOrb.getLocalTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
-		caps2P = (engine.getSceneGraph()).addPhysicsCapsuleX(
-			1.0f, tempTransform, 1.0f, height);
-		caps2P.setBounciness(0.8f);
-		sc.addTarget(bulletOrb); //Shoots the bullet
+		caps2P = (engine.getSceneGraph()).addPhysicsSphere(
+			0.001f, tempTransform, 0.1f);
+		caps2P.setBounciness(1f);
+		bulletOrb.setPhysicsObject(caps2P);
+		Vector3f force = new Vector3f().add(avatar.getLocalForwardVector().mul(bulletForce));
+		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
 	}
 
 	@Override
@@ -903,5 +973,17 @@ public class MyGame extends VariableFrameRateGame
 	
 	public void GameOver(){
 		gameOver = true;
+	}
+
+	public float getDefaultSpeed(){
+		return this.DEFAULT_SPEED;
+	}
+
+	public float getMovementSpeed(){
+		return this.movementSpeed;
+	}
+
+	public void setMovementSpeed(float speed){
+		this.movementSpeed = speed;
 	}
 }

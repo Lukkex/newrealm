@@ -13,6 +13,7 @@ public class ShootingController extends NodeController
 	private Vector3f curLocation, newLocation;
 	private Engine engine;
 	private float distanceTraveled = 0.0f;
+	private Matrix4f force;
 
 	/** Creates a bobbing controller with vertical axis, and speed=1.0. */
 	public ShootingController() { super(); }
@@ -30,17 +31,8 @@ public class ShootingController extends NodeController
 	/** This is called automatically by the RenderSystem (via SceneGraph) once per frame
 	*   during display().  It is for engine use and should not be called by the application.
 	*/
-	public void apply(GameObject go){	
-		elapsedTime = super.getElapsedTime();
-		curLocation = go.getLocalLocation();
-		newLocation = curLocation.add(go.getLocalForwardVector().mul((float) Math.sin(elapsedTime * movementSpeed)));
-		go.setLocalLocation(newLocation);
-
-		distanceTraveled += elapsedTime * movementSpeed;
-
-		//If the object flies too far, disable
-		if (distanceTraveled > 400f){
-			go.getRenderStates().disableRendering();
-		}
+	public void apply(GameObject go){
+		//force = new Matrix4f().getLocalForwardVector().mul(movementSpeed);
+		go.getPhysicsObject().applyForce(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	}
 }

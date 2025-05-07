@@ -9,17 +9,18 @@ public class SprintAction extends AbstractInputAction{
     private GameObject obj;
     private float pitchSpeed;
     private ProtocolClient protClient;
+    private float sprintSpeed;
 
     public SprintAction(MyGame g, ProtocolClient p, float speed){
         game = g;
 		protClient = p;
-        pitchSpeed = speed;
+        sprintSpeed = speed;
     }
 
     @Override
     public void performAction(float time, Event e){
-        obj = game.getAvatar();
-        obj.pitch(pitchSpeed * e.getValue());
-        protClient.sendRotateMessage(obj.getWorldRotation());
+        System.out.println("\nMovement Speed: " + game.getMovementSpeed());
+        game.setMovementSpeed((float)(sprintSpeed * game.getDeltaTime() * e.getValue()));
+        System.out.println("\nSprint speed: " + (sprintSpeed * game.getDeltaTime() * e.getValue()) + "\nMovement Speed: " + game.getMovementSpeed());
     }
 }

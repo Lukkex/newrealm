@@ -92,13 +92,13 @@ public class EntityManager
 		String type;
 		Entity temp;
 		GameObject avatar = game.getAvatar();
-		Vector3f avatarPos = game.getAvatar().getWorldLocation();;
+		Vector3f avatarPos = game.getAvatar().getWorldLocation();
 		
 		for (int i = 0; i < entities.size(); i++){
 			temp = entities.get(i);
 			type = temp.getType();
 
-			if (type == "Ghoul"){
+			//if (type == "Ghoul"){
 				//Ghoul continues to look towards and follow the *nearest* player
 				temp.lookAt(avatar);
 				temp.move(0.01f * deltaTime);
@@ -111,7 +111,7 @@ public class EntityManager
 					game.setBroadcastMessage("");
 					game.setBroadcastMessageColor(Constants.hudWhiteColor);
 				}
-			}
+			//}
 		}
 	}
 }
