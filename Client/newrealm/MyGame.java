@@ -156,7 +156,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private float mapUnitSize = 4.0f;
 	private float wallWidth = mapUnitSize/2.0f;
-	private float wallHeight = 3.0f;
+	private float wallHeight = 2.5f;
 	private float floorSize = 0.55555f;
 
 	public MyGame(){
@@ -459,8 +459,8 @@ public class MyGame extends VariableFrameRateGame
 					}
 					else {
 						wall.getRenderStates().setRenderHiddenFaces(true);
-						wall.getRenderStates().setTiling(1);
-						wall.getRenderStates().setTileFactor((int) wallWidth);
+						//wall.getRenderStates().setTiling(1);
+						//wall.getRenderStates().setTileFactor((int) wallWidth);
 						wall.getRenderStates().hasLighting(false);
 					}
 
