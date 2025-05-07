@@ -19,6 +19,9 @@ public class Entity extends GameObject
 	private GameObject go;
 	private float movementSpeed = 0.01f; //Default Speed
 	private String type = "";
+	private final int DEFAULT_FIRING_COOLDOWN = 50000; //500 ticks
+	private int firingCooldown;
+	private int firingCooldownDecrement = 1;
 
 	public Entity(GameObject go){
 		this.go = go;
@@ -30,6 +33,7 @@ public class Entity extends GameObject
 		setPosition(p);
 		this.getRenderStates().setRenderHiddenFaces(renderHidden);
 		this.type = type;
+		this.firingCooldown = DEFAULT_FIRING_COOLDOWN;
 	}
 
 	public Entity(UUID id, AnimatedShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
@@ -65,4 +69,30 @@ public class Entity extends GameObject
 
 	public void setType(String type) { this.type = type; }
 	public String getType() { return this.type; }
+
+	public void setFiringCooldown(int cooldown) { this.firingCooldown = cooldown; }
+	public int getFiringCooldown() { return this.firingCooldown; }
+
+	public int getDefaultFiringCooldown() { return this.DEFAULT_FIRING_COOLDOWN; }
+
+	/** Initial cooldown of 0, since has not fired yet */
+	public void initFiringCooldown(){
+		this.firingCooldown = 0;
+	}
+
+	public void resetFiringCooldown(float deltaTime){
+		this.firingCooldown = (int) (DEFAULT_FIRING_COOLDOWN * deltaTime);
+	}
+
+	/** Decrements firing cooldown by firingCooldownDecrement and returns true if it has gone below 0 (cooldown is up) and resets it */
+	public boolean updateFiringCooldown(float deltaTime){
+		this.firingCooldown -= (deltaTime * 100) * firingCooldownDecrement;
+		if (firingCooldown <= 0){
+			resetFiringCooldown(deltaTime);
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 }

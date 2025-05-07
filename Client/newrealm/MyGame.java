@@ -43,6 +43,9 @@ public class MyGame extends VariableFrameRateGame
 	double[] temp;
 
 	//Avatar
+	private GameObject avatar;
+	private AnimatedShape avatarS;
+	private TextureImage avatartx;
 	private float avatarHeight = 0.3f;
 	private PhysicsObject avatarHitbox;
 
@@ -114,34 +117,47 @@ public class MyGame extends VariableFrameRateGame
 	private final String DEFAULT_IP_ADDRESS = "192.168.1.19";
 	private final int DEFAULT_PORT_NUMBER = 6010;
 
-	//Game
-	private GameObject avatar, lineX, lineY, lineZ, 
+	// -/-/------------ GAME OBJECTS & ATTRIBUTES ------------/-/- //
+	private GameObject lineX, lineY, lineZ, 
 	floor, ground, chamber, cone, eye, stars1, stars2, sanctum, starLarge, upperChamber;
 
 	private ObjShape ghostS, lineSx, 
 	lineSy, lineSz, floorS, groundS, chamberS, coneS, eyeS, stars1S, stars2S, sanctumS, starLargeS, upperChamberS;
 
-	private AnimatedShape avatarS;
-
-	private TextureImage avatartx, ghosttx, linetx, 
+	private TextureImage ghosttx, linetx, 
 	floortx, groundtx, floorheightmap, groundheightmap, chambertx,
 	conetx, eyetx, stars1tx, stars2tx, sanctumtx, starLargetx, upperChambertx;
 
-	//Lights
+	// ---------- LIGHT ---------------- //
 	private Light light1, light2, light3;
 
-	//Enemies
+	
+	// ---------- ENTITIES ---------------- //
+	//Ghoul
 	private AnimatedShape ghoulS;
 	private TextureImage ghoultx;
+	private float ghoulScaling = 0.1f;
 
-	//Map #1
-	private ObjShape wallS, doorS;
-	private TextureImage walltx, doortx;
+	
+	// ---------- MAP COMPONENTS & EXTRAS ---------------- //
+	//Eye of Ego
+	private GameObject eyeOfEgo;
+	private ObjShape eyeOfEgoS;
+	private TextureImage eyeOfEgotx;
+	private float eyeOfEgoScaling = 20f;
+
+	// ---------- AMMO TYPE ---------------- //
+	private ObjShape egoOrbS;
+	private TextureImage egoOrbtx;
+
+	// ---------- MAP #1 ---------------- //
+	private ObjShape wallS, windowS, doorS;
+	private TextureImage walltx, windowtx, doortx;
 
 	private float mapUnitSize = 4.0f;
 	private float wallWidth = mapUnitSize/2.0f;
 	private float wallHeight = 3.0f;
-	private float floorSize;
+	private float floorSize = 0.55555f;
 
 	public MyGame(){
 		super();
@@ -149,7 +165,7 @@ public class MyGame extends VariableFrameRateGame
 		em = new EntityManager(this, protClient);
 		mm = new MapManager();
 
-		floorSize = mm.getMapHeight(1) * mapUnitSize;
+		floorSize = mm.getMapHeight(1) * mapUnitSize * floorSize;
 
 		try {
 			System.out.println("\nIP Address (Enter for default - " + DEFAULT_IP_ADDRESS + "): ");
@@ -183,7 +199,7 @@ public class MyGame extends VariableFrameRateGame
 		em = new EntityManager(this, protClient);
 		mm = new MapManager();
 		
-		floorSize = mm.getMapHeight(1) * mapUnitSize;
+		floorSize = mm.getMapHeight(1) * mapUnitSize * floorSize;
 
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
@@ -219,7 +235,9 @@ public class MyGame extends VariableFrameRateGame
 		floorS = new TerrainPlane(1000);
 		groundS = new TerrainPlane(100);
 
+		//Map Parts
 		wallS = new ImportedModel("wall.obj");
+		windowS = new ImportedModel("window.obj");
 		doorS = new ImportedModel("door.obj");
 
 		chamberS = new ImportedModel("Chamber.obj");
@@ -236,6 +254,12 @@ public class MyGame extends VariableFrameRateGame
 		lineSy = new Line(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, lineLength, 0.0f));
 		lineSx = new Line(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(lineLength, 0.0f, 0.0f));
 		lineSz = new Line(new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, lineLength));
+		
+		// ---------- AMMO TYPES ----------------
+		egoOrbS = new ImportedModel("egoSpike.obj");
+
+		// ---------- MAP COMPONENTS & EXTRAS ----------------
+		eyeOfEgoS = new ImportedModel("eyeOfEgo.obj");
 	}
 
 	@Override
@@ -270,9 +294,16 @@ public class MyGame extends VariableFrameRateGame
 
 		upperChambertx = new TextureImage("Star.jpg");
 
+		//Map Parts
 		walltx = new TextureImage("wall.png");
-
+		windowtx = new TextureImage("window.png");
 		doortx = new TextureImage("door.png");
+
+		// ---------- AMMO TYPES ----------------
+		egoOrbtx = new TextureImage("ego.png");
+
+		// ---------- MAP COMPONENTS & EXTRAS ----------------
+		eyeOfEgotx = new TextureImage("eyeOfEgo_withBG.png");
 	}
 
 	@Override
@@ -306,6 +337,8 @@ public class MyGame extends VariableFrameRateGame
 		// build avatar in the center of the window
 		avatar = new GameObject(GameObject.root(), avatarS, avatartx);
 
+		// ---------- MAP COMPONENTS & EXTRAS ----------------
+
 		lineX = new GameObject(GameObject.root(), lineSx, linetx);
 		lineY = new GameObject(GameObject.root(), lineSy, linetx);
 		lineZ = new GameObject(GameObject.root(), lineSz, linetx);
@@ -326,7 +359,7 @@ public class MyGame extends VariableFrameRateGame
 		floor.getRenderStates().setTileFactor((int) floorSize/2);
 		floor.getRenderStates().hasLighting(false);
 
-		ground.setLocalTranslation((new Matrix4f()).translation(0f, -200f, 0f));
+		ground.setLocalTranslation((new Matrix4f()).translation(0f, -10f, 0f));
 		ground.setLocalScale((new Matrix4f()).scaling(100f));
 		ground.setHeightMap(groundheightmap);
 		ground.getRenderStates().setTiling(1);
@@ -340,6 +373,7 @@ public class MyGame extends VariableFrameRateGame
 		eye = new GameObject(GameObject.root(), eyeS, eyetx);
 
 		sanctum = new GameObject(GameObject.root(), sanctumS, sanctumtx);
+		sanctum.getRenderStates().hasLighting(false);
 
 		//Utilizes Scene Graph
 		stars1 = new GameObject(sanctum, stars1S, stars1tx);
@@ -376,6 +410,13 @@ public class MyGame extends VariableFrameRateGame
 			0f, tempTransform, 0.5f, 1f);
 		avatarHitbox.setBounciness(0f);
 		avatarHitbox.setFriction(0f);
+
+		//Eye of Ego
+		eyeOfEgo = new GameObject(GameObject.root(), eyeOfEgoS, eyeOfEgotx);
+		eyeOfEgo.setLocalScale((new Matrix4f()).scaling(eyeOfEgoScaling));
+		eyeOfEgo.setLocalTranslation((new Matrix4f()).translation(avatar.getWorldLocation().add(new Vector3f(50f, 150f, -23f))));
+		eyeOfEgo.getRenderStates().hasLighting(false);
+		eyeOfEgo.getRenderStates().isTransparent(true);
 	}
 
 	/** Builds the world's map using the Map.java class */
@@ -384,16 +425,24 @@ public class MyGame extends VariableFrameRateGame
 		int x = 0;
 		int y = 0;
 		int entityListSize = em.getEntityListSize();
+		int locState = 0;
 
-		for (int i = 0; i < mm.getMapWidth(1); i++){
-			for (int j = 0; j < mm.getMapHeight(1); j++){
+		for (int i = 0; i < mm.getMapWidth(mapID); i++){
+			for (int j = 0; j < mm.getMapHeight(mapID); j++){
+				locState = mm.getMapLocationState(mapID, i, j);
+
 				//Create Wall at location
-				if (mm.getMapLocationState(1, i, j) != 0){
+				if (locState != 0){
 					x = i - (mm.getMapWidth(1)/2);
 					y = j- (mm.getMapHeight(1)/2);
 				}
-				if (mm.getMapLocationState(1, i, j) == 1){
-					GameObject wall = new GameObject(GameObject.root(), wallS, walltx);
+				if (locState == 1 || locState == 8 || locState == 9){
+					GameObject wall;
+					if (locState == 8){ //Windowed Wall
+						wall = new GameObject(GameObject.root(), windowS, windowtx);
+					}
+					else
+						wall = new GameObject(GameObject.root(), wallS, walltx);
 					
 					float[] wallVerts = wallS.getVertices();
 					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
@@ -401,10 +450,19 @@ public class MyGame extends VariableFrameRateGame
 					wall.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
 					wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
 					wall.setLocalRotation((new Matrix4f()).rotationX((float) Math.toRadians(-90)));
-					wall.getRenderStates().setRenderHiddenFaces(true);
-					wall.getRenderStates().setTiling(1);
-					wall.getRenderStates().setTileFactor(10);
-					wall.getRenderStates().hasLighting(false);
+					if (locState == 9)
+						wall.getRenderStates().disableRendering();
+					else if (locState == 8){
+						wall.getRenderStates().setRenderHiddenFaces(true);
+						wall.getRenderStates().setTiling(0);
+						wall.getRenderStates().hasLighting(false);
+					}
+					else {
+						wall.getRenderStates().setRenderHiddenFaces(true);
+						wall.getRenderStates().setTiling(1);
+						wall.getRenderStates().setTileFactor((int) wallWidth);
+						wall.getRenderStates().hasLighting(false);
+					}
 
 					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth};
 					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
@@ -412,7 +470,7 @@ public class MyGame extends VariableFrameRateGame
 					wall.setPhysicsObject(cube);
 				}
 				//Create W-E door at location
-				else if (mm.getMapLocationState(1, i, j) == 2){
+				else if (locState == 2){
 					GameObject door = new GameObject(GameObject.root(), doorS, doortx);
 
 					float[] wallVerts = wallS.getVertices();
@@ -436,7 +494,7 @@ public class MyGame extends VariableFrameRateGame
 					door.setPhysicsObject(cube);
 				}
 				//Create N-S door at location
-				else if (mm.getMapLocationState(1, i, j) == 3){
+				else if (locState == 3){
 					GameObject door = new GameObject(GameObject.root(), doorS, doortx);
 
 					float[] wallVerts = wallS.getVertices();
@@ -449,7 +507,6 @@ public class MyGame extends VariableFrameRateGame
 					door.getRenderStates().setRenderHiddenFaces(true);
 					door.getRenderStates().setTiling(1);
 					door.getRenderStates().hasLighting(false);
-					
 
 					//17.53% the width of typical wall
 					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth * 0.1753f};
@@ -462,7 +519,7 @@ public class MyGame extends VariableFrameRateGame
 				//Create a Ghoul Spawn at location
 				else if (mm.getMapLocationState(1, i, j) == 'G'){
 					try {
-						em.createEntity(entityListSize, ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul");
+						em.createEntity(entityListSize, ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul", ghoulScaling);
 					}
 					catch (Exception e){
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
@@ -640,6 +697,9 @@ public class MyGame extends VariableFrameRateGame
 			Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
 			temp = toDoubleArray((new Matrix4f(avatar.getLocalTranslation())).get(vals));
 			avatarHitbox.setTransform(temp);
+
+			// ---------- MAP COMPONENTS & EXTRAS ----------------
+			eyeOfEgo.lookAt(avatar);
 
 			//Pseudo Physics -- Jumping objects
 			updateAllPseudoPhysicsObjects();
@@ -831,20 +891,7 @@ public class MyGame extends VariableFrameRateGame
 	//Add this later for controller, Action class specifically added for gamepads
 	@Override
 	public void mousePressed(MouseEvent e){
-		AttackSound.play();
-		GameObject bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
-		bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
-		bulletOrb.setLocalLocation(cam.getLocation());
-		bulletOrb.setLocalRotation(avatar.getLocalRotation());
-		double[ ] tempTransform;
-		Matrix4f translation = new Matrix4f(bulletOrb.getLocalTranslation());
-		tempTransform = toDoubleArray(translation.get(vals));
-		caps2P = (engine.getSceneGraph()).addPhysicsSphere(
-			0.001f, tempTransform, 0.1f);
-		caps2P.setBounciness(1f);
-		bulletOrb.setPhysicsObject(caps2P);
-		Vector3f force = new Vector3f().add(avatar.getLocalForwardVector().mul(bulletForce));
-		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+		shootOrbFrom(avatar, "Eye");
 	}
 
 	@Override
@@ -962,8 +1009,10 @@ public class MyGame extends VariableFrameRateGame
 			{	contactPoint = manifold.getContactPoint(j);
 				if (contactPoint.getDistance() < 0.0f)
 				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
-					if (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox))
+					if (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)){
 						avatar.setLocalTranslation(toMatrix4f(avatarHitbox.getTransform()));
+						System.out.println("\nPlayer collision!");
+					}
 					break;
 				}
 			}
@@ -1002,6 +1051,47 @@ public class MyGame extends VariableFrameRateGame
 		mat4 = mat4.set(ret);
 		
 		return mat4;
+	}
+
+	// ---------- COMBAT SECTION ----------------
+	public void shootOrbFrom(GameObject fromObject, String type){
+		AttackSound.play();
+
+		GameObject bulletOrb;
+		switch (type){
+			case "Ego": //Ghoul spawn orb ammo type
+				bulletOrb = new GameObject(GameObject.root(), egoOrbS, egoOrbtx);
+				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.05f));
+				break;
+			default: 
+				bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
+				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
+		}
+
+		if (fromObject.equals(avatar))
+			bulletOrb.setLocalLocation(cam.getLocation());
+		else
+			bulletOrb.setLocalLocation(fromObject.getLocalLocation());
+		bulletOrb.setLocalRotation(fromObject.getLocalRotation());
+
+		double[ ] tempTransform;
+		Matrix4f translation = new Matrix4f(bulletOrb.getLocalTranslation());
+
+		tempTransform = toDoubleArray(translation.get(vals));
+		caps2P = (engine.getSceneGraph()).addPhysicsSphere(
+			0.001f, tempTransform, 0.1f);
+		caps2P.setBounciness(1f);
+
+		bulletOrb.setPhysicsObject(caps2P);
+
+		Vector3f force = new Vector3f().add(fromObject.getLocalForwardVector().mul(bulletForce));
+		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+	}
+
+	/** Returns true if object can see other object (no other objects in the way, uses ray) */
+	public boolean hasClearViewToObject(GameObject obj){
+		//Implement this later
+		return true;
 	}
 
 	// ---------- MISC. KEYBOARD-ONLY INPUTS ----------------

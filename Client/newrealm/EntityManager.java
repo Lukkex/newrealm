@@ -16,6 +16,8 @@ public class EntityManager
 	private MyGame game;
 	private ProtocolClient pc;
 	private Vector<Entity> entities = new Vector<Entity>();
+	private boolean hostile = false; //If hostile entities will act hostile or not
+	private float ghoulHostileDistance = 15.0f; //How close for Ghoul to start going after player
 
 	public EntityManager(VariableFrameRateGame vfrg, ProtocolClient pc){	
 		this.game = (MyGame)vfrg;
@@ -28,7 +30,17 @@ public class EntityManager
 	 public void createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
 		System.out.println("adding entity with ID --> " + id);
 		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
+		newEntity.initFiringCooldown();
 		Matrix4f initialScale = (new Matrix4f()).scaling(1f);
+		newEntity.setLocalScale(initialScale);
+		entities.add(newEntity);
+	}
+
+	/** Allows for custom scaling of object rather than the default of 1.0f */
+	public void createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type, float scaleAmount) throws IOException {	
+		System.out.println("adding entity with ID --> " + id);
+		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
+		Matrix4f initialScale = (new Matrix4f()).scaling(scaleAmount);
 		newEntity.setLocalScale(initialScale);
 		entities.add(newEntity);
 	}
@@ -107,20 +119,28 @@ public class EntityManager
 			temp = it.next();
 			type = temp.getType();
 
-			//if (type == "Ghoul"){
+			if (type == "Ghoul"){
 				//Ghoul continues to look towards and follow the *nearest* player
-				temp.lookAt(avatar);
-				temp.move(0.01f * deltaTime);
+				if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= ghoulHostileDistance){
+					temp.lookAt(avatar);
+					if (hostile){
+							temp.move(0.01f * deltaTime);
 
-				if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
-					game.setBroadcastMessage(" | ENEMY IS CLOSING IN!");
-					game.setBroadcastMessageColor(Constants.hudRedColor);
+						if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
+							game.setBroadcastMessage(" | ENEMY IS CLOSING IN!");
+							game.setBroadcastMessageColor(Constants.hudRedColor);
+						}
+						else {
+							game.setBroadcastMessage("");
+							game.setBroadcastMessageColor(Constants.hudWhiteColor);
+						}
+					}
+
+					if (temp.updateFiringCooldown(deltaTime))
+						game.shootOrbFrom(temp, "Ego");
 				}
-				else {
-					game.setBroadcastMessage("");
-					game.setBroadcastMessageColor(Constants.hudWhiteColor);
-				}
-			//}
+
+			}
 		}
 	}
 }
