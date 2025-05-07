@@ -19,7 +19,6 @@ public class StrafeAction extends AbstractInputAction{
 
     @Override
     public void performAction(float time, Event e){
-        System.out.println("\nDirection: " + movementDirection);
         obj = game.getAvatar();
         obj.strafe(game.getMovementSpeed() * movementDirection * (float) game.getDeltaTime() * e.getValue());
         protClient.sendMoveMessage(obj.getWorldLocation());

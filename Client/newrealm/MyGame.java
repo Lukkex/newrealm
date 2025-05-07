@@ -25,8 +25,10 @@ import tage.physics.PhysicsObject;
 import tage.physics.JBullet.JBulletPhysicsEngine;
 import tage.physics.JBullet.JBulletPhysicsObject;
 
+import java.util.Iterator;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.Vector;
 
 public class MyGame extends VariableFrameRateGame
 {
@@ -37,9 +39,19 @@ public class MyGame extends VariableFrameRateGame
 	private MapManager mm;
 	private EntityManager em;
 
+	//Temp Values
+	double[] temp;
+
+	//Avatar
+	private float avatarHeight = 0.3f;
+	private PhysicsObject avatarHitbox;
+
 	//Sound
 	private IAudioManager audioMgr;
 	private Sound AttackSound, BGSound;
+
+	//Pseudo Physics
+	private Vector<GameObject> pseudoPhysicsObjects = new Vector<GameObject>();
 
 	//Physics
 	private PhysicsEngine physicsEngine;
@@ -70,6 +82,8 @@ public class MyGame extends VariableFrameRateGame
 	private float pitchAmount = 0.01f;
 	private final float DEFAULT_SPEED = 0.02f;
 	private float movementSpeed = DEFAULT_SPEED;
+	private float jumpAmount = 1.0f;
+	private boolean isJumping = false;
 	private float bulletForce = DEFAULT_SPEED * 20.0f;
 	private float sprintSpeed = DEFAULT_SPEED * 2.0f;
 	private float lineLength = 5.0f;
@@ -124,7 +138,7 @@ public class MyGame extends VariableFrameRateGame
 	private ObjShape wallS, doorS;
 	private TextureImage walltx, doortx;
 
-	private float mapUnitSize = 8.0f;
+	private float mapUnitSize = 4.0f;
 	private float wallWidth = mapUnitSize/2.0f;
 	private float wallHeight = 3.0f;
 	private float floorSize;
@@ -292,9 +306,6 @@ public class MyGame extends VariableFrameRateGame
 		// build avatar in the center of the window
 		avatar = new GameObject(GameObject.root(), avatarS, avatartx);
 
-		avatar.getRenderStates().setRenderHiddenFaces(false);
-		
-		
 		lineX = new GameObject(GameObject.root(), lineSx, linetx);
 		lineY = new GameObject(GameObject.root(), lineSy, linetx);
 		lineZ = new GameObject(GameObject.root(), lineSz, linetx);
@@ -312,7 +323,7 @@ public class MyGame extends VariableFrameRateGame
 		floor.setLocalScale((new Matrix4f()).scaling(floorSize));
 		//floor.setHeightMap(floorheightmap);
 		floor.getRenderStates().setTiling(1);
-		floor.getRenderStates().setTileFactor((int) floorSize);
+		floor.getRenderStates().setTileFactor((int) floorSize/2);
 		floor.getRenderStates().hasLighting(false);
 
 		ground.setLocalTranslation((new Matrix4f()).translation(0f, -200f, 0f));
@@ -327,24 +338,27 @@ public class MyGame extends VariableFrameRateGame
 
 		cone = new GameObject(GameObject.root(), coneS, conetx);
 		eye = new GameObject(GameObject.root(), eyeS, eyetx);
-		stars1 = new GameObject(GameObject.root(), stars1S, stars1tx);
-		stars2 = new GameObject(GameObject.root(), stars2S, stars2tx);
-		starLarge = new GameObject(GameObject.root(), starLargeS, starLargetx);
+
 		sanctum = new GameObject(GameObject.root(), sanctumS, sanctumtx);
-		sanctum.setLocalRotation(new Matrix4f().rotationY((float) Math.toRadians(180)));
-		upperChamber = new GameObject(GameObject.root(), upperChamberS, upperChambertx);
+
+		//Utilizes Scene Graph
+		stars1 = new GameObject(sanctum, stars1S, stars1tx);
+		stars2 = new GameObject(stars1, stars2S, stars2tx);
+		starLarge = new GameObject(sanctum, starLargeS, starLargetx);
+		upperChamber = new GameObject(starLarge, upperChamberS, upperChambertx);
 
 		cone.setLocalScale((new Matrix4f()).scaling(8f));
 		eye.setLocalScale((new Matrix4f()).scaling(2f));
 		eye.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		stars1.setLocalScale((new Matrix4f()).scaling(8f));
-		stars1.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		stars1.setLocalTranslation((new Matrix4f()).translation(0f, 21f, 0f));
 		stars2.setLocalScale((new Matrix4f()).scaling(8f));
-		stars2.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		stars2.setLocalTranslation((new Matrix4f()).translation(0f, 18f, 0f));
 		starLarge.setLocalScale((new Matrix4f()).scaling(8f));
 		starLarge.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		sanctum.setLocalScale((new Matrix4f()).scaling(8f));
-		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		sanctum.setLocalRotation(new Matrix4f().rotationY((float) Math.toRadians(180)));
+		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 20f));
 		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
 		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		upperChamber.getRenderStates().setRenderHiddenFaces(true);
@@ -352,7 +366,16 @@ public class MyGame extends VariableFrameRateGame
 		//Generate the map
 		buildMap(1);
 
-		avatar.setLocalScale((new Matrix4f()).scaling(0.1f));
+		avatar.setLocalScale((new Matrix4f()).scaling(avatarHeight));
+		
+		avatar.getRenderStates().setRenderHiddenFaces(false);
+		double[ ] tempTransform;
+		Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		avatarHitbox = (engine.getSceneGraph()).addPhysicsCylinder(
+			0f, tempTransform, 0.5f, 1f);
+		avatarHitbox.setBounciness(0f);
+		avatarHitbox.setFriction(0f);
 	}
 
 	/** Builds the world's map using the Map.java class */
@@ -439,7 +462,7 @@ public class MyGame extends VariableFrameRateGame
 				//Create a Ghoul Spawn at location
 				else if (mm.getMapLocationState(1, i, j) == 'G'){
 					try {
-						em.createEntity(UUID.fromString("" + entityListSize), ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul");
+						em.createEntity(entityListSize, ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul");
 					}
 					catch (Exception e){
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
@@ -493,11 +516,11 @@ public class MyGame extends VariableFrameRateGame
 		StrafeAction strafe = new StrafeAction(this, protClient, 1);
 		StrafeAction strafeRight = new StrafeAction(this, protClient, -1);
 		TurnAction turn = new TurnAction(this, protClient, yawAmount); //Gamepad only
-		TurnAction turnRight = new TurnAction(this, protClient, -yawAmount); //Gamepad only
 		PitchAction pitchUp = new PitchAction(this, protClient, pitchAmount);
 		PitchAction pitchDown = new PitchAction(this, protClient, -pitchAmount);
 		DisableAxisAction disableAxis = new DisableAxisAction(this);
 		SprintAction sprint = new SprintAction(this, protClient, sprintSpeed);
+		JumpAction jump = new JumpAction(this, protClient, jumpAmount);
 
 		//Controller actions
 		im.associateActionWithAllGamepads(net.java.games.input.Component.Identifier.Axis.Y, move, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
@@ -512,6 +535,7 @@ public class MyGame extends VariableFrameRateGame
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.DOWN, pitchDown, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.Q, disableAxis, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.LSHIFT, sprint, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		im.associateActionWithAllKeyboards(net.java.games.input.Component.Identifier.Key.SPACE, jump, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
 		lastFrameTime = System.currentTimeMillis();
 		currFrameTime = System.currentTimeMillis();
@@ -520,7 +544,6 @@ public class MyGame extends VariableFrameRateGame
 		(engine.getRenderSystem()).setWindowDimensions(1900,1000);
 
 		// ------------- Setting up main camera -------------
-		
 		cam = (engine.getRenderSystem().getViewport("LEFT").getCamera());
 
 		//* Minimap Camera for Debugging */
@@ -544,6 +567,7 @@ public class MyGame extends VariableFrameRateGame
 
 		rc.addTarget(chamber);
 		rc.addTarget(stars1);
+		rc.addTarget(stars2);
 		rc.addTarget(starLarge);
 		bc.addTarget(upperChamber);
 
@@ -612,6 +636,13 @@ public class MyGame extends VariableFrameRateGame
 
 			minimapController.updateCameraPosition();
 			avatar.setLocalRotation(cam.getLocalRotation());
+
+			Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
+			temp = toDoubleArray((new Matrix4f(avatar.getLocalTranslation())).get(vals));
+			avatarHitbox.setTransform(temp);
+
+			//Pseudo Physics -- Jumping objects
+			updateAllPseudoPhysicsObjects();
 
 			//Physics
 			Matrix4f currentTranslation, currentRotation;
@@ -898,6 +929,19 @@ public class MyGame extends VariableFrameRateGame
 
 	// ---------- PHYSICS SECTION ----------------
 
+	public void addPseudoPhysicsObject(GameObject obj){
+		pseudoPhysicsObjects.add(obj);
+	}
+
+	public void updateAllPseudoPhysicsObjects(){
+		GameObject temp;
+		Iterator<GameObject> it = pseudoPhysicsObjects.iterator();
+
+		while(it.hasNext()){
+			temp = it.next();
+		}
+	}
+
 	private void checkForCollisions(){	
 		com.bulletphysics.dynamics.DynamicsWorld dynamicsWorld;
 		com.bulletphysics.collision.broadphase.Dispatcher dispatcher;
@@ -918,6 +962,8 @@ public class MyGame extends VariableFrameRateGame
 			{	contactPoint = manifold.getContactPoint(j);
 				if (contactPoint.getDistance() < 0.0f)
 				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
+					if (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox))
+						avatar.setLocalTranslation(toMatrix4f(avatarHitbox.getTransform()));
 					break;
 				}
 			}
@@ -942,6 +988,20 @@ public class MyGame extends VariableFrameRateGame
 			ret[i] = (double)arr[i];
 		}
 		return ret;
+	}
+
+	private Matrix4f toMatrix4f(double[] arr){
+		if (arr == null) return null;
+		int n = arr.length;
+		Matrix4f mat4 = new Matrix4f();
+		float[] ret = new float[n];
+		for (int i = 0; i < n; i++){ 
+			ret[i] = (float)arr[i];
+		}
+
+		mat4 = mat4.set(ret);
+		
+		return mat4;
 	}
 
 	// ---------- MISC. KEYBOARD-ONLY INPUTS ----------------

@@ -15,12 +15,21 @@ import org.joml.*;
 public class Entity extends GameObject
 {
 	private UUID uuid;
+	private int int_id;
 	private GameObject go;
 	private float movementSpeed = 0.01f; //Default Speed
 	private String type = "";
 
 	public Entity(GameObject go){
 		this.go = go;
+	}
+	
+	public Entity(int id, AnimatedShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
+		super(GameObject.root(), s, t);
+		int_id = id;
+		setPosition(p);
+		this.getRenderStates().setRenderHiddenFaces(renderHidden);
+		this.type = type;
 	}
 
 	public Entity(UUID id, AnimatedShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	

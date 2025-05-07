@@ -84,7 +84,7 @@ public class GameObject
 	private Vector3f v = new Vector3f(); // utility vector for JOML calls
 
 	private PhysicsObject physicsObject;
-	private boolean isTerrain = false;
+	private boolean isTerrain, isJumping = false;
 
 	//------------------ CONSTRUCTORS -----------------
 
@@ -253,6 +253,21 @@ public class GameObject
 		}
 	}
 
+	/** Jumps GameObject based on jumpAmount and the global up vector */
+	public void jump(float jumpAmount){
+		if (this.getPhysicsObject() == null){
+			this.getPhysicsObject().applyForce(0.0f, jumpAmount, 0.0f, 0.0f, 0.0f, 0.0f);
+		}
+	}
+
+	/** Jumps GameObject based on jumpAmount and its Local Up Vector */
+	public void jumpLocal(float jumpAmount){
+		if (this.getPhysicsObject() == null){
+			Vector3f force = new Vector3f(this.getLocalUpVector().mul(jumpAmount));
+			this.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+		}
+	}
+
 	/** Rotates GameObject around the GLOBAL Y Axis (yaw) by the specified rotation amount */
 	public void yaw(float rotationAmount){
 		localRotation.rotateLocalY(rotationAmount);
@@ -263,6 +278,16 @@ public class GameObject
 	public void pitch(float rotationAmount){
 		localRotation.rotateX(rotationAmount);
 		this.update();
+	}
+
+	/** Returns whether or not object is currently jumping */
+	public boolean isJumping(){
+		return this.isJumping;
+	}
+
+	/** Sets whether or not object is currently jumping */
+	public void setIsJumping(boolean s){
+		this.isJumping = s;
 	}
 	
 	// ------------ SCENE GRAPH TRAVERSAL for MATRICES -----------------

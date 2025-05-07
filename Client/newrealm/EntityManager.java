@@ -25,6 +25,14 @@ public class EntityManager
 	/** Used to add a new entity to the entities list 
 	 * that will be iterated through on every update call 
 	 */
+	 public void createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
+		System.out.println("adding entity with ID --> " + id);
+		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
+		Matrix4f initialScale = (new Matrix4f()).scaling(1f);
+		newEntity.setLocalScale(initialScale);
+		entities.add(newEntity);
+	}
+
 	public void createEntity(UUID id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
 		System.out.println("adding entity with ID --> " + id);
 		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
@@ -93,9 +101,10 @@ public class EntityManager
 		Entity temp;
 		GameObject avatar = game.getAvatar();
 		Vector3f avatarPos = game.getAvatar().getWorldLocation();
+		Iterator<Entity> it = entities.iterator();
 		
-		for (int i = 0; i < entities.size(); i++){
-			temp = entities.get(i);
+		while(it.hasNext()){
+			temp = it.next();
 			type = temp.getType();
 
 			//if (type == "Ghoul"){
