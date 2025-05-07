@@ -15,7 +15,7 @@ public class MapManager {
         private char[][] layout;
         private int width, height;
         private int numOfLockedDoors;
-        private List<Integer> playerSpawnLocation;
+        private int[] playerSpawnLocation = new int[2];
 
         public Map(){} //Empty map
 
@@ -32,8 +32,8 @@ public class MapManager {
             for (int i = 0; i < this.width; i++){
                 for (int j = 0; j < this.height; j++){
                     if (layout[i][j] == 'P'){
-                        playerSpawnLocation.add(i);
-                        playerSpawnLocation.add(j);
+                        playerSpawnLocation[0] = i;
+                        playerSpawnLocation[1] = j;
                         return; 
                     }
                 }
@@ -54,7 +54,7 @@ public class MapManager {
             return this.height;
         }
 
-        public List<Integer> getPlayerLocation(){
+        public int[] getPlayerLocation(){
             return this.playerSpawnLocation;
         }
 
@@ -85,7 +85,7 @@ public class MapManager {
             {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
         };
 
-        Map map1 = new Map(1, map1Height, map1Width);
+        Map map1 = new Map(1, map1Width, map1Height);
         map1.setMapLayout(temp);
 
         maps.add(new Map()); //Empty map; will make it so Map #1 is at index 1 and not 0
@@ -109,7 +109,7 @@ public class MapManager {
         return maps.get(mapID).getMapHeight();
     }
 
-    public List<Integer> getPlayerLocation(int mapID){
+    public int[] getPlayerLocation(int mapID){
         return maps.get(mapID).getPlayerLocation();
     }
 }

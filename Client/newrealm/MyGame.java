@@ -33,6 +33,8 @@ public class MyGame extends VariableFrameRateGame
 	private static Engine engine;
 	private InputManager im;
 	private GhostManager gm;
+	private MapManager mm;
+	private EntityManager em;
 
 	//Sound
 	private IAudioManager audioMgr;
@@ -122,8 +124,6 @@ public class MyGame extends VariableFrameRateGame
 	private TextureImage ghoultx;
 
 	//Map #1
-	private MapManager mm = new MapManager(this);
-
 	private ObjShape wallS;
 	private TextureImage walltx;
 
@@ -165,6 +165,8 @@ public class MyGame extends VariableFrameRateGame
 	public MyGame(String serverAddress, int serverPort, String protocol){ 
 		super(); 
 		gm = new GhostManager(this);
+		em = new EntityManager(this, protClient);
+		mm = new MapManager();
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
 		if (protocol.toUpperCase().compareTo("TCP") == 0)
@@ -280,9 +282,6 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void buildObjects(){	
-		//Generate the map
-		buildMap(1);
-
 		// build avatar in the center of the window
 		avatar = new GameObject(GameObject.root(), avatarS, avatartx);
 
@@ -299,14 +298,7 @@ public class MyGame extends VariableFrameRateGame
 
 		ground = new GameObject(GameObject.root(), groundS, groundtx);
 
-		ghoul = new GameObject(GameObject.root(), ghoulS, ghoultx);
 		chamber = new GameObject(GameObject.root(), chamberS, chambertx);
-
-		avatar.setLocalTranslation((new Matrix4f()).translation(0f,0f,0f));
-		avatar.setLocalScale((new Matrix4f()).scaling(0.1f));
-
-		ghoul.setLocalTranslation((new Matrix4f()).translation(15.0f, 0.0f, -15.0f));
-		ghoul.setLocalScale((new Matrix4f()).scaling(0.1f));
 
 		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
 		floor.setLocalScale((new Matrix4f()).scaling(floorSize));
@@ -322,7 +314,7 @@ public class MyGame extends VariableFrameRateGame
 
 		chamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		chamber.setLocalScale((new Matrix4f()).scaling(8f));
-		chamber.getRenderStates().setRenderHiddenFaces(true);;
+		chamber.getRenderStates().setRenderHiddenFaces(true);
 
 		cone = new GameObject(GameObject.root(), coneS, conetx);
 		eye = new GameObject(GameObject.root(), eyeS, eyetx);
@@ -345,28 +337,50 @@ public class MyGame extends VariableFrameRateGame
 		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
 		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		upperChamber.getRenderStates().setRenderHiddenFaces(true);
+
+		//Generate the map
+		buildMap(1);
+
+		avatar.setLocalScale((new Matrix4f()).scaling(0.1f));
 	}
 
 	/** Builds the world's map using the Map.java class */
 	public void buildMap(int mapID){
-		int x,y; //temp variables
+		//temp variables
+		int x = 0;
+		int y = 0;
 
-		switch (mapID){
-			//Map #1
-			case 1:
-				for (int i = 0; i < mm.getMapWidth(1); i++){
-					for (int j = 0; j < mm.getMapHeight(1); j++){
-						if (mm.getMapLocationState(1, i, j) == 1){
-							x = i - (mm.getMapWidth(1)/2);
-							y = j- (mm.getMapHeight(1)/2);
-							GameObject wall = new GameObject(GameObject.root(), wallS, walltx);
-							wall.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
-							wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)));
-							
-						}
-					}
+		for (int i = 0; i < mm.getMapWidth(1); i++){
+			for (int j = 0; j < mm.getMapHeight(1); j++){
+				//Create Wall at location
+				if (mm.getMapLocationState(1, i, j) != 0){
+					x = i - (mm.getMapWidth(1)/2);
+					y = j- (mm.getMapHeight(1)/2);
+				}
+				if (mm.getMapLocationState(1, i, j) == 1){
+					GameObject wall = new GameObject(GameObject.root(), wallS, walltx);
+					wall.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
+					wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)));
+					wall.setLocalRotation((new Matrix4f()).rotationX((float) Math.toRadians(-90)));
+					wall.getRenderStates().setRenderHiddenFaces(true);
+					wall.getRenderStates().setTiling(1);
+					wall.getRenderStates().setTileFactor(10);
+				}
+				//Create a Ghoul Spawn at location
+				else if (mm.getMapLocationState(1, i, j) == 'G'){
+					GameObject ghoul = new GameObject(GameObject.root(), ghoulS, ghoultx);
+					ghoul.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)));
+					ghoul.getRenderStates().setRenderHiddenFaces(true);
+					ghoul.setLocalScale((new Matrix4f()).scaling(0.1f));
+					em.add(ghoul);
+				}
 			}
 		}
+		x = (mm.getPlayerLocation(mapID)[0] - (mm.getMapWidth(1)/2));
+		y= (mm.getPlayerLocation(mapID)[1] - (mm.getMapHeight(1)/2));
+
+		avatar.setLocalTranslation((new Matrix4f()).translation(x * mapUnitSize, 0f, y * mapUnitSize));
 	}
 
 	@Override
