@@ -22,9 +22,21 @@ public class Entity extends GameObject
 	private final int DEFAULT_FIRING_COOLDOWN = 50000; //500 ticks
 	private int firingCooldown;
 	private int firingCooldownDecrement = 1;
+	private boolean state = false;
+
+	public Entity(){
+		super();
+	}
 
 	public Entity(GameObject go){
 		this.go = go;
+	}
+
+	public Entity(int id, ObjShape s, TextureImage t, String type) {	
+		super(GameObject.root(), s, t);
+		int_id = id;
+		this.type = type;
+		this.firingCooldown = DEFAULT_FIRING_COOLDOWN;
 	}
 	
 	public Entity(int id, AnimatedShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
@@ -42,6 +54,15 @@ public class Entity extends GameObject
 		setPosition(p);
 		this.getRenderStates().setRenderHiddenFaces(renderHidden);
 		this.type = type;
+	}
+
+	public Entity(int id, ObjShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
+		super(GameObject.root(), s, t);
+		int_id = id;
+		setPosition(p);
+		this.getRenderStates().setRenderHiddenFaces(renderHidden);
+		this.type = type;
+		this.firingCooldown = DEFAULT_FIRING_COOLDOWN;
 	}
 
 	public Entity(UUID id, ObjShape s, TextureImage t, Vector3f p, boolean renderHidden, String type) {	
@@ -69,6 +90,9 @@ public class Entity extends GameObject
 
 	public void setType(String type) { this.type = type; }
 	public String getType() { return this.type; }
+
+	public void setState(boolean state) { this.state = state; }
+	public boolean getState() { return this.state; }
 
 	public void setFiringCooldown(int cooldown) { this.firingCooldown = cooldown; }
 	public int getFiringCooldown() { return this.firingCooldown; }

@@ -2,6 +2,7 @@ package newrealm;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.lang.Math;
 import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.UUID;
@@ -24,41 +25,71 @@ public class EntityManager
 		this.pc = pc;
 	}
 
+	public Entity createEntity(int id, ObjShape s, TextureImage t, String type) throws IOException {	
+		System.out.println("adding entity with ID --> " + id);
+		Entity newEntity = new Entity(id, s, t, type);
+		newEntity.initFiringCooldown();
+		Matrix4f initialScale = (new Matrix4f()).scaling(1f);
+		newEntity.setLocalScale(initialScale);
+		entities.add(newEntity);
+
+		return newEntity;
+	}
+
 	/** Used to add a new entity to the entities list 
 	 * that will be iterated through on every update call 
 	 */
-	 public void createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
+	 public Entity createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
 		System.out.println("adding entity with ID --> " + id);
 		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
 		newEntity.initFiringCooldown();
 		Matrix4f initialScale = (new Matrix4f()).scaling(1f);
 		newEntity.setLocalScale(initialScale);
 		entities.add(newEntity);
+
+		return newEntity;
 	}
 
 	/** Allows for custom scaling of object rather than the default of 1.0f */
-	public void createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type, float scaleAmount) throws IOException {	
+	public Entity createEntity(int id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type, float scaleAmount) throws IOException {	
 		System.out.println("adding entity with ID --> " + id);
 		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
 		Matrix4f initialScale = (new Matrix4f()).scaling(scaleAmount);
 		newEntity.setLocalScale(initialScale);
 		entities.add(newEntity);
+
+		return newEntity;
 	}
 
-	public void createEntity(UUID id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
+	public Entity createEntity(UUID id, AnimatedShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
 		System.out.println("adding entity with ID --> " + id);
 		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
 		Matrix4f initialScale = (new Matrix4f()).scaling(1f);
 		newEntity.setLocalScale(initialScale);
 		entities.add(newEntity);
+
+		return newEntity;
+	}
+
+		/** Allows for custom scaling of object rather than the default of 1.0f */
+	public Entity createEntity(int id, ObjShape s, TextureImage t, Vector3f position, boolean renderHidden, String type, float scaleAmount) throws IOException {	
+		System.out.println("adding entity with ID --> " + id);
+		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
+		Matrix4f initialScale = (new Matrix4f()).scaling(scaleAmount);
+		newEntity.setLocalScale(initialScale);
+		entities.add(newEntity);
+
+		return newEntity;
 	}
 	
-	public void createEntity(UUID id, ObjShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
+	public Entity createEntity(UUID id, ObjShape s, TextureImage t, Vector3f position, boolean renderHidden, String type) throws IOException {	
 		System.out.println("adding entity with ID --> " + id);
 		Entity newEntity = new Entity(id, s, t, position, renderHidden, type);
 		Matrix4f initialScale = (new Matrix4f()).scaling(1f);
 		newEntity.setLocalScale(initialScale);
 		entities.add(newEntity);
+
+		return newEntity;
 	}
 	
 	public void removeEntity(UUID id)
@@ -141,6 +172,24 @@ public class EntityManager
 				}
 
 			}
+			else if (type == "Door"){
+				if (distance(avatarPos, temp.getWorldLocation()) <= 2.0f){
+					if (!temp.getState()) //Cannot spam raise it
+						temp.setLocalLocation(temp.getLocalLocation().add(temp.getWorldUpVector()).mul(5.0f));
+					temp.setState(true);
+				}
+				else{ //Raised, player out of range, so lower it now
+					if (temp.getState()) //Only lower if previously was raised up
+						temp.setLocalLocation(temp.getLocalLocation().add(temp.getWorldUpVector()).mul(-5.0f));
+					temp.setState(false);
+				}
+			}
 		}
+	}
+
+	//Helper function for determining distance between 2 Vector3f Objects
+	public float distance(Vector3f v1, Vector3f v2){
+		//sqrt((x2-x1)^2 + (y2-y1)^2 + (z2-z1)^2)
+		return (float) Math.sqrt(Math.pow((double)(v2.x() - v1.x()), 2) + Math.pow((double)(v2.y() - v1.y()), 2) + Math.pow((double)(v2.z() - v1.z()), 2));
 	}
 }

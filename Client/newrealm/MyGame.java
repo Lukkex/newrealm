@@ -52,6 +52,7 @@ public class MyGame extends VariableFrameRateGame
 	private boolean isPlayerInvincible = false;
 	private float iFrameDuration = 500; //500 Ticks
 	private float cooldownCounter = iFrameDuration;
+	private Vector3f previousAvatarLocation = new Vector3f(); //Used if collides with a wall to revert to non-colliding position
 
 	//Sound
 	private IAudioManager audioMgr;
@@ -105,9 +106,12 @@ public class MyGame extends VariableFrameRateGame
 	private Vector3f loc;
 
 	//Node Controllers
-	private RotationController rc;
+	private RotationController rc, rc_reverse;
 	private BobbingController bc;
 	private ShootingController sc;
+
+	private Vector<GameObject> rc_ObjectsToAddLater = new Vector<GameObject>();
+	private Vector<GameObject> rc_reverse_ObjectsToAddLater = new Vector<GameObject>();
 
 	//Networking
 	private String serverAddress;
@@ -137,6 +141,11 @@ public class MyGame extends VariableFrameRateGame
 
 	
 	// ---------- ENTITIES ---------------- //
+	//NextLevelPad
+	private ObjShape padS, padRing0S, padRing1S, padRing2S, padRing3S, padRing4S, padArrowS;
+	private TextureImage padtx, padRingtx, padArrowtx;
+	private float padScaling = 0.4f;
+
 	//Ghoul
 	private AnimatedShape ghoulS;
 	private TextureImage ghoultx;
@@ -155,13 +164,15 @@ public class MyGame extends VariableFrameRateGame
 	private TextureImage egoOrbtx;
 
 	// ---------- MAP #1 ---------------- //
-	private ObjShape wallS, windowS, doorS;
+	private ObjShape wallS, windowS, doorS, doorhorizS;
 	private TextureImage walltx, windowtx, doortx;
+	private Vector<PhysicsObject> mapHitboxes = new Vector<PhysicsObject>();
 
 	private float mapUnitSize = 4.0f;
 	private float wallWidth = mapUnitSize/2.0f;
 	private float wallHeight = 2.5f;
 	private float floorSize = 0.55555f;
+	private float floorYLevel = -1f;
 
 	public MyGame(){
 		super();
@@ -243,6 +254,7 @@ public class MyGame extends VariableFrameRateGame
 		wallS = new ImportedModel("wall.obj");
 		windowS = new ImportedModel("window.obj");
 		doorS = new ImportedModel("door.obj");
+		doorhorizS = new ImportedModel("doorhoriz.obj");
 
 		chamberS = new ImportedModel("Chamber.obj");
 
@@ -263,6 +275,15 @@ public class MyGame extends VariableFrameRateGame
 		egoOrbS = new ImportedModel("egoSpike.obj");
 
 		// ---------- MAP COMPONENTS & EXTRAS ----------------
+		//Level Pad
+		padS = new ImportedModel("NextLevelPad/NextLevel_Pad.obj");
+		padRing0S = new ImportedModel("NextLevelPad/NextLevel_0.obj");
+		padRing1S = new ImportedModel("NextLevelPad/NextLevel_1.obj");
+		padRing2S = new ImportedModel("NextLevelPad/NextLevel_2.obj");
+		padRing3S = new ImportedModel("NextLevelPad/NextLevel_3.obj");
+		padRing4S = new ImportedModel("NextLevelPad/NextLevel_4.obj");
+		padArrowS = new ImportedModel("NextLevelPad/Arrow.obj");
+
 		eyeOfEgoS = new ImportedModel("eyeOfEgo.obj");
 	}
 
@@ -302,6 +323,11 @@ public class MyGame extends VariableFrameRateGame
 		walltx = new TextureImage("wall.png");
 		windowtx = new TextureImage("window.png");
 		doortx = new TextureImage("door.png");
+
+		//Level Pad
+		padtx = new TextureImage("pad.png");
+		padArrowtx = new TextureImage("padarrow.png");
+		padRingtx = new TextureImage("padring.png");
 
 		// ---------- AMMO TYPES ----------------
 		egoOrbtx = new TextureImage("ego.png");
@@ -354,9 +380,12 @@ public class MyGame extends VariableFrameRateGame
 
 		ground = new GameObject(GameObject.root(), groundS, groundtx);
 
-		chamber = new GameObject(GameObject.root(), chamberS, chambertx);
+		sanctum = new GameObject(GameObject.root(), sanctumS, sanctumtx);
+		sanctum.getRenderStates().hasLighting(false);
 
-		floor.setLocalTranslation((new Matrix4f()).translation(0f, -1f, 0f));
+		chamber = new GameObject(sanctum, chamberS, chambertx);
+
+		floor.setLocalTranslation((new Matrix4f()).translation(0f, floorYLevel, 0f));
 		floor.setLocalScale((new Matrix4f()).scaling(floorSize));
 		//floor.setHeightMap(floorheightmap);
 		floor.getRenderStates().setTiling(1);
@@ -365,19 +394,17 @@ public class MyGame extends VariableFrameRateGame
 
 		ground.setLocalTranslation((new Matrix4f()).translation(0f, -10f, 0f));
 		ground.setLocalScale((new Matrix4f()).scaling(100f));
+		ground.setLocalRotation((new Matrix4f()).rotationX((float) Math.toRadians(180)));
 		ground.setHeightMap(groundheightmap);
 		ground.getRenderStates().setTiling(1);
 		ground.getRenderStates().setTileFactor(10);
 
-		chamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
-		chamber.setLocalScale((new Matrix4f()).scaling(8f));
+		//chamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		//chamber.setLocalScale((new Matrix4f()).scaling(8f));
 		chamber.getRenderStates().setRenderHiddenFaces(true);
 
 		cone = new GameObject(GameObject.root(), coneS, conetx);
 		eye = new GameObject(GameObject.root(), eyeS, eyetx);
-
-		sanctum = new GameObject(GameObject.root(), sanctumS, sanctumtx);
-		sanctum.getRenderStates().hasLighting(false);
 
 		//Utilizes Scene Graph
 		stars1 = new GameObject(sanctum, stars1S, stars1tx);
@@ -388,21 +415,18 @@ public class MyGame extends VariableFrameRateGame
 		cone.setLocalScale((new Matrix4f()).scaling(8f));
 		eye.setLocalScale((new Matrix4f()).scaling(2f));
 		eye.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
-		stars1.setLocalScale((new Matrix4f()).scaling(8f));
-		stars1.setLocalTranslation((new Matrix4f()).translation(0f, 21f, 0f));
-		stars2.setLocalScale((new Matrix4f()).scaling(8f));
-		stars2.setLocalTranslation((new Matrix4f()).translation(0f, 18f, 0f));
-		starLarge.setLocalScale((new Matrix4f()).scaling(8f));
-		starLarge.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
-		sanctum.setLocalScale((new Matrix4f()).scaling(8f));
+		//stars1.setLocalScale((new Matrix4f()).scaling(8f));
+		//stars1.setLocalTranslation((new Matrix4f()).translation(0f, 3f, 0f));
+		//stars2.setLocalScale((new Matrix4f()).scaling(8f));
+		stars2.setLocalTranslation((new Matrix4f()).translation(0f, 3f, 0f));
+		//starLarge.setLocalScale((new Matrix4f()).scaling(8f));
+		//starLarge.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		sanctum.setLocalScale((new Matrix4f()).scaling(20f));
 		sanctum.setLocalRotation(new Matrix4f().rotationY((float) Math.toRadians(180)));
-		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 20f));
+		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 45f, 95f));
 		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
 		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		upperChamber.getRenderStates().setRenderHiddenFaces(true);
-
-		//Generate the map
-		buildMap(1);
 
 		avatar.setLocalScale((new Matrix4f()).scaling(avatarHeight));
 		
@@ -471,18 +495,24 @@ public class MyGame extends VariableFrameRateGame
 					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth};
 					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
 					cube.setBounciness(0);
+					mapHitboxes.add(cube);
 					wall.setPhysicsObject(cube);
 				}
 				//Create W-E door at location
 				else if (locState == 2){
-					GameObject door = new GameObject(GameObject.root(), doorS, doortx);
+					Entity door = new Entity();
 
 					float[] wallVerts = wallS.getVertices();
 					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
-
+					try {
+						door = em.createEntity(entityListSize, doorS, doortx, "Door");
+					}
+					catch (Exception e){
+						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+					}	
 					door.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
 					door.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
-					door.setLocalRotation((new Matrix4f()).rotationX((float) Math.toRadians(-90)));
+					//door.yaw(180);;
 					
 					door.getRenderStates().setRenderHiddenFaces(true);
 					door.getRenderStates().setTiling(1);
@@ -495,11 +525,12 @@ public class MyGame extends VariableFrameRateGame
 					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
 					cube.setBounciness(0);
 
+					mapHitboxes.add(cube);
 					door.setPhysicsObject(cube);
 				}
 				//Create N-S door at location
 				else if (locState == 3){
-					GameObject door = new GameObject(GameObject.root(), doorS, doortx);
+					GameObject door = new GameObject(GameObject.root(), doorhorizS, doortx);
 
 					float[] wallVerts = wallS.getVertices();
 					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
@@ -518,10 +549,11 @@ public class MyGame extends VariableFrameRateGame
 					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
 					cube.setBounciness(0);
 
+					mapHitboxes.add(cube);
 					door.setPhysicsObject(cube);
 				}
 				//Create a Ghoul Spawn at location
-				else if (mm.getMapLocationState(1, i, j) == 'G'){
+				else if (locState == 'G'){
 					try {
 						em.createEntity(entityListSize, ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul", ghoulScaling);
 					}
@@ -530,6 +562,21 @@ public class MyGame extends VariableFrameRateGame
 					}
 
 					entityListSize++;
+				}
+				else if (locState == '@'){ //Can re-use these to save space
+					try {
+						em.createEntity(entityListSize, padS, padtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling);
+						rc_reverse_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing0S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						rc_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing1S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						rc_reverse_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing2S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						rc_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing3S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						rc_reverse_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing4S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						rc_ObjectsToAddLater.add(em.createEntity(entityListSize, padArrowS, padArrowtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						
+					}
+					catch (Exception e){
+						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+					}
 				}
 			}
 		}
@@ -615,6 +662,7 @@ public class MyGame extends VariableFrameRateGame
 		minimapController = new CameraMinimap(minimap, floor, gamepadName, engine);
 
 		rc = new RotationController(engine, new Vector3f(0, 1, 0), 0.002f);
+		rc_reverse = new RotationController(engine, new Vector3f(0, 1, 0), -0.002f);
 		bc = new BobbingController(engine, 0.0005f);
 		sc = new ShootingController(engine, 0.005f);
 
@@ -623,6 +671,7 @@ public class MyGame extends VariableFrameRateGame
 		(engine.getSceneGraph()).addNodeController(sc);
 
 		rc.enable();
+		rc_reverse.enable();
 		bc.enable();
 		sc.enable();
 
@@ -630,6 +679,15 @@ public class MyGame extends VariableFrameRateGame
 		rc.addTarget(stars1);
 		rc.addTarget(stars2);
 		rc.addTarget(starLarge);
+
+		for (GameObject go : rc_ObjectsToAddLater){
+			rc.addTarget(go);
+		}
+
+		for (GameObject go : rc_reverse_ObjectsToAddLater){
+			rc_reverse.addTarget(go);
+		}
+
 		bc.addTarget(upperChamber);
 
 		initMouseMode();
@@ -676,8 +734,12 @@ public class MyGame extends VariableFrameRateGame
 		tempTransform, up, 0.0f);
 		planeP.setBounciness(1.0f);
 		floor.setPhysicsObject(planeP);
+		
 		engine.enableGraphicsWorldRender();
 		engine.enablePhysicsWorldRender();
+		
+		//Generate the map
+		buildMap(1);
 	}
 
 	public void setEarParameters(){
@@ -690,6 +752,7 @@ public class MyGame extends VariableFrameRateGame
 		if (!gameOver && !hasWon){	
 			//Update elapsed time based on current frame and last frame's time
 			recenterMouse();
+			previousAvatarLocation = avatar.getLocalLocation();
 			movementSpeed = DEFAULT_SPEED; //Resets; if not sprinting, will be normal speed
 			lastFrameTime = currFrameTime;
 			currFrameTime = System.currentTimeMillis();
@@ -700,10 +763,10 @@ public class MyGame extends VariableFrameRateGame
 			avatar.setLocalRotation(cam.getLocalRotation());
 
 			if (avatar.isJumping()){
-				avatar.incrementJump((float) elapsTime);
+				avatar.incrementJump((float) elapsTime, protClient);
 			}
 
-			invincibilityWindow(elapsTime);
+			invincibilityWindow((float) elapsTime); //Check if invincible, aka has been recently damaged
 
 			Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
 			temp = toDoubleArray((new Matrix4f(avatar.getLocalTranslation())).get(vals));
@@ -816,12 +879,12 @@ public class MyGame extends VariableFrameRateGame
 
 	//Broadcasting function that can announce a broadcast message on the HUD
 	public void broadcast(String message){
-		(engine.getHUDmanager()).setHUD1("Score: " + Integer.toString(numOfDisarmed) + message, Constants.hudWhiteColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + message, Constants.hudWhiteColor, 15, 15);
 	}
 
 	//Overloaded in case you want something other than the default white color for the HUD
 	public void broadcast(String message, Vector3f HUDColor){
-		(engine.getHUDmanager()).setHUD1("Score: " + Integer.toString(numOfDisarmed) + message, HUDColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + message, HUDColor, 15, 15);
 	}
 
 	public void setBroadcastMessage(String message){
@@ -1021,15 +1084,19 @@ public class MyGame extends VariableFrameRateGame
 			JBulletPhysicsObject obj2 = JBulletPhysicsObject.getJBulletPhysicsObject(object2);
 			for (int j = 0; j < manifold.getNumContacts(); j++)
 			{	contactPoint = manifold.getContactPoint(j);
-				if (contactPoint.getDistance() < 0.0f)
+				if (contactPoint.getDistance() < 0.1f)
 				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
-					if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "bullet" || obj2.getType() == "bullet" )){
+					if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "Ego" || obj2.getType() == "Ego" )){
 						if (!obj1.equals(avatarHitbox))
 							PlayerHP -= obj1.getDamage();
 						else
 							PlayerHP -= obj2.getDamage(); 
 						System.out.println("\nPlayer hit!");
 						isPlayerInvincible = true; //IFrames to prevent spam damage
+					}
+					else if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox))){
+						avatar.setLocalLocation(previousAvatarLocation);
+						System.out.println("\nPlayer collided with an object!");
 					}
 					break;
 				}
