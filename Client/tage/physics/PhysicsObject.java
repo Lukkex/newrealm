@@ -185,4 +185,8 @@ public interface PhysicsObject {
 	 */
 	public void applyTorque(float fx, float fy, float fz);
 
+	public String getType();
+    public void setType(String type);
+    public int getDamage();
+    public void setDamage(int damage);
 }

@@ -28,6 +28,8 @@ public abstract class JBulletPhysicsObject implements PhysicsObject {
     private Vector3f localInertia;
     private DefaultMotionState myMotionState;
     private RigidBodyConstructionInfo rbInfo;
+    private String type = "";
+    private int damageAmount = 20; //Default is 20HP
 
 /** If using TAGE, physics objects should be created using the methods in the TAGE Scenegraph class, rather than this constructor. 
 */
@@ -195,4 +197,9 @@ public abstract class JBulletPhysicsObject implements PhysicsObject {
 	public void applyTorque(float fx, float fy, float fz){
 		body.applyTorque(new Vector3f(fx, fy, fz));
 	}
+
+    public String getType(){return type;}
+    public void setType(String type){this.type = type;}
+    public int getDamage(){return damageAmount;}
+    public void setDamage(int damage){this.damageAmount = damage;}
 }

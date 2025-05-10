@@ -22,7 +22,7 @@ public class JumpAction extends AbstractInputAction{
     public void performAction(float time, Event e){
         if (!isJumping){
             obj = game.getAvatar();
-            obj.jump(jumpAmount);
+            obj.jump(jumpAmount, protClient);
             protClient.sendMoveMessage(obj.getWorldLocation());
         }
     }

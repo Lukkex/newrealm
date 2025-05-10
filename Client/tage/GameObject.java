@@ -1,5 +1,8 @@
 package tage;
 import org.joml.*;
+
+import newrealm.ProtocolClient;
+
 import java.util.*;
 import tage.shapes.*;
 import tage.physics.PhysicsObject;
@@ -70,6 +73,8 @@ public class GameObject
 	public static GameObject root() { return root; }
 	//------------------------------------------------------
 
+	private final float DEFAULT_JUMP_DURATION = 100f; //Ticks
+	private final float GRAVITY = -9.81f;
 	private ObjShape shape;
 	private TextureImage texture;
 	private TextureImage heightMap = (TextureImage) new DefaultHeightMap();
@@ -83,8 +88,14 @@ public class GameObject
 	private boolean applyParentRotationToPosition, applyParentScaleToPosition;
 	private Vector3f v = new Vector3f(); // utility vector for JOML calls
 
+	//JUMPING
 	private PhysicsObject physicsObject;
 	private boolean isTerrain, isJumping = false;
+	private float jumpAmount, jumpStartTime, jumpElapsedTime, jumpY;
+	private float jumpDuration = DEFAULT_JUMP_DURATION;
+	private float jumpAngle = 60.0f;
+	private float initVelocity = 20.0f;
+	private float v0 = (float)(initVelocity * StrictMath.sin(StrictMath.toRadians(jumpAngle)));
 
 	//------------------ CONSTRUCTORS -----------------
 
@@ -253,15 +264,40 @@ public class GameObject
 		}
 	}
 
-	/** Jumps GameObject based on jumpAmount and the global up vector */
+	/** Jumps GameObject based on jumpAmount and the global up vector WITHOUT using GameObject's physics object */
 	public void jump(float jumpAmount){
+		if (!this.isJumping){
+			//If not currently in the motion of jumping, allow the player to begin jumping
+			this.jumpAmount = jumpAmount;
+			jumpStartTime = System.currentTimeMillis();
+		}
+	}
+
+	public void incrementJump(float deltaTime, ProtocolClient protClient){
+		if (this.isJumping){
+			jumpElapsedTime = (System.currentTimeMillis() - jumpStartTime)/jumpDuration;
+			//jumpElapsedTime acts as if the X to a function mapping a parabola with the acceleration being that of GRAVITY
+			//StrictMath.cos(jumpElapsedTime); //From 1 to -1
+			jumpY = (float) (StrictMath.pow((GRAVITY/2 * jumpElapsedTime), 2) + (v0 * jumpElapsedTime));
+			this.setLocalLocation(this.getLocalLocation().add(this.getLocalUpVector().mul(this.jumpAmount)));
+
+			if (jumpY <= 0.0f){ //0.0f is temporary solution; for dynamic jumps, needs to be based on collision Y level of object under player
+				this.setIsJumping(false); //Has hit the ground plane
+			}
+			
+            protClient.sendMoveMessage(this.getWorldLocation());
+		}
+	}
+
+	/** Jumps GameObject based on jumpAmount and the global up vector */
+	public void jumpPhys(float jumpAmount){
 		if (this.getPhysicsObject() == null){
 			this.getPhysicsObject().applyForce(0.0f, jumpAmount, 0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 
 	/** Jumps GameObject based on jumpAmount and its Local Up Vector */
-	public void jumpLocal(float jumpAmount){
+	public void jumpPhysLocal(float jumpAmount){
 		if (this.getPhysicsObject() == null){
 			Vector3f force = new Vector3f(this.getLocalUpVector().mul(jumpAmount));
 			this.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);

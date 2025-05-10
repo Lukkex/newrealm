@@ -48,6 +48,10 @@ public class MyGame extends VariableFrameRateGame
 	private TextureImage avatartx;
 	private float avatarHeight = 0.3f;
 	private PhysicsObject avatarHitbox;
+	private int PlayerHP = 100;
+	private boolean isPlayerInvincible = false;
+	private float iFrameDuration = 500; //500 Ticks
+	private float cooldownCounter = iFrameDuration;
 
 	//Sound
 	private IAudioManager audioMgr;
@@ -691,8 +695,15 @@ public class MyGame extends VariableFrameRateGame
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
 
+			//Player Updates
 			minimapController.updateCameraPosition();
 			avatar.setLocalRotation(cam.getLocalRotation());
+
+			if (avatar.isJumping()){
+				avatar.incrementJump((float) elapsTime);
+			}
+
+			invincibilityWindow(elapsTime);
 
 			Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
 			temp = toDoubleArray((new Matrix4f(avatar.getLocalTranslation())).get(vals));
@@ -1012,9 +1023,13 @@ public class MyGame extends VariableFrameRateGame
 			{	contactPoint = manifold.getContactPoint(j);
 				if (contactPoint.getDistance() < 0.0f)
 				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
-					if (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)){
-						avatar.setLocalTranslation(toMatrix4f(avatarHitbox.getTransform()));
-						System.out.println("\nPlayer collision!");
+					if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "bullet" || obj2.getType() == "bullet" )){
+						if (!obj1.equals(avatarHitbox))
+							PlayerHP -= obj1.getDamage();
+						else
+							PlayerHP -= obj2.getDamage(); 
+						System.out.println("\nPlayer hit!");
+						isPlayerInvincible = true; //IFrames to prevent spam damage
 					}
 					break;
 				}
@@ -1084,11 +1099,22 @@ public class MyGame extends VariableFrameRateGame
 		caps2P = (engine.getSceneGraph()).addPhysicsSphere(
 			0.001f, tempTransform, 0.1f);
 		caps2P.setBounciness(1f);
+		caps2P.setType(type);
 
 		bulletOrb.setPhysicsObject(caps2P);
 
 		Vector3f force = new Vector3f().add(fromObject.getLocalForwardVector().mul(bulletForce));
 		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+	}
+
+	public void invincibilityWindow(float deltaTime){
+		if (isPlayerInvincible){
+			cooldownCounter -= deltaTime/10;
+			if (cooldownCounter <= 0){
+				isPlayerInvincible = false; //Invincibility period is over
+				cooldownCounter = iFrameDuration; //Reset to default
+			}
+		}
 	}
 
 	/** Returns true if object can see other object (no other objects in the way, uses ray) */
