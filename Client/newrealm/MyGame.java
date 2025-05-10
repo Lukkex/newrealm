@@ -138,7 +138,7 @@ public class MyGame extends VariableFrameRateGame
 	conetx, eyetx, stars1tx, stars2tx, sanctumtx, starLargetx, upperChambertx;
 
 	// ---------- LIGHT ---------------- //
-	private Light light1, light2, light3;
+	private Light light1, light2, light3, light4;
 
 	
 	// ---------- ENTITIES ---------------- //
@@ -203,6 +203,7 @@ public class MyGame extends VariableFrameRateGame
 				this.serverProtocol = ProtocolType.TCP;
 			else
 				this.serverProtocol = ProtocolType.UDP;
+				
 		}
 		catch (Exception f){
 			System.out.println("\nInvalid parameters for network connection.\n\nIP, Port, Protocol (TCP | UDP)\n");
@@ -639,6 +640,11 @@ public class MyGame extends VariableFrameRateGame
 		light3.setDiffuse(1.0f, 0.729f, 0.0f);
 		light3.setSpecular(1.0f, 0.729f, 0.0f);
 
+		//Victory light - fully green
+		light4 = new Light();
+		light4.setDiffuse(0.0f, 1f, 0.0f);
+		light4.setSpecular(0.0f, 1f, 0.0f);
+
 		(engine.getSceneGraph()).addLight(light1);
 		(engine.getSceneGraph()).addLight(light2);
 		(engine.getSceneGraph()).addLight(light3);
@@ -755,8 +761,10 @@ public class MyGame extends VariableFrameRateGame
 		planeP.setBounciness(1.0f);
 		floor.setPhysicsObject(planeP);
 		
+		avatar.yaw(90);
+		cam.yaw(90);
 		engine.enableGraphicsWorldRender();
-		engine.enablePhysicsWorldRender();
+		//engine.enablePhysicsWorldRender();
 	}
 
 	public void setEarParameters(){
@@ -855,6 +863,10 @@ public class MyGame extends VariableFrameRateGame
 			if (PlayerHP <= 0){
 				PlayerHP = 0;
 				GameOver();
+			}
+
+			if (hasWon){
+				light4.setLocation(avatar.getWorldLocation().add(new Vector3f(0, 2, 0)));
 			}
 
 			// Broadcast any new message and update HUD 1
@@ -1122,6 +1134,10 @@ public class MyGame extends VariableFrameRateGame
 					else if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox))){
 						avatar.setLocalLocation(previousAvatarLocation);
 						System.out.println("\nPlayer collided with an object!");
+					}
+					else if ((obj1.getType() == "Ghoul"  || obj2.getType() == "Ghoul" ) && (obj1.getType() == "Eye"  || obj2.getType() == "Eye" )){
+						
+						System.out.println("\nEnemy damaged!");
 					}
 					break;
 				}

@@ -15,6 +15,7 @@ import org.joml.*;
 public class Entity extends GameObject
 {
 	private UUID uuid;
+	private int HP = 100;
 	private int int_id;
 	private GameObject go;
 	private float movementSpeed = 0.01f; //Default Speed
@@ -98,6 +99,8 @@ public class Entity extends GameObject
 
 	public void setState(boolean state) { this.state = state; }
 	public boolean getState() { return this.state; }
+
+	public void takeDamage(int damage) { HP -= damage; if (HP <= 0) this.getRenderStates().disableRendering();}
 
 	public void setFiringCooldown(int cooldown) { this.firingCooldown = cooldown; }
 	public int getFiringCooldown() { return this.firingCooldown; }
