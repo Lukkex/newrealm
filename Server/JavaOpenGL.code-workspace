@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{ "path": "." },
+	],
+	"settings": {
+		"java.project.referencedLibraries": [
+			"C:\\javagaming\\jogl\\jogamp-fat.jar",
+			"C:\\javagaming\\joml\\joml-1.10.7.jar",
+			"C:\\javagaming\\jinput\\jinput.jar",
+			"C:\\javagaming\\jbullet\\jbullet.jar",
+			"C:\\javagaming\\jbullet\\jbullet.jar"
+		]
+	}
+}
