@@ -173,11 +173,16 @@ public class EntityManager
 
 			}
 			else if (type == "Door"){
-				if (distance(avatarPos, temp.getWorldLocation()) <= 0.1f){
-					temp.getLocalTranslation().setRowColumn(2, 5, 3);
+				if (distance(avatarPos, temp.getWorldLocation()) <= 3f){
+					temp.getLocalTranslation().setRowColumn(1, 3, 3);
 				}
 				else{ //Raised, player out of range, so lower it now
-					temp.getLocalTranslation().setRowColumn(2, 5, 0);
+					temp.getLocalTranslation().setRowColumn(1, 3, 0);
+				}
+			}
+			else if (type == "NextLevelPad"){
+				if (distance(avatarPos, temp.getWorldLocation()) <= 1.5f){
+					game.Win();
 				}
 			}
 		}

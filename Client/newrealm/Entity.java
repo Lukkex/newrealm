@@ -32,6 +32,11 @@ public class Entity extends GameObject
 		this.go = go;
 	}
 
+	public Entity(Entity e){
+		super(GameObject.root(), e.getShape(), e.getTextureImage());
+		type = e.getType();
+	}
+
 	public Entity(int id, ObjShape s, TextureImage t, String type) {	
 		super(GameObject.root(), s, t);
 		int_id = id;

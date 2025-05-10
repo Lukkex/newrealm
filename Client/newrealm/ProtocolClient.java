@@ -9,6 +9,7 @@ import java.util.Vector;
 import org.joml.*;
 
 import tage.*;
+import tage.networking.Message;
 import tage.networking.client.GameConnectionClient;
 
 public class ProtocolClient extends GameConnectionClient
@@ -234,9 +235,13 @@ public class ProtocolClient extends GameConnectionClient
 	// Informs the server that the local avatar has changed position.  
 	// Message Format: (move,localId,x,y,z) where x, y, and z represent the position.
 
-	public void sendShootMessage(Vector3f position)
+	public void sendShootMessage(Vector3f position, Vector3f direction, String type)
 	{	try 
-		{	String message = new String("shoot," + id.toString());
+		{	
+			Message msg = Message.getMessage();
+			msg.addItem(position);
+			msg.addItem(direction);
+			String message = new String("shoot," + id.toString());
 			message += "," + position.x();
 			message += "," + position.y();
 			message += "," + position.z();

@@ -51,7 +51,7 @@ public class MyGame extends VariableFrameRateGame
 	private PhysicsObject avatarHitbox;
 	private int PlayerHP = 100;
 	private boolean isPlayerInvincible = false;
-	private float iFrameDuration = 500; //500 Ticks
+	private float iFrameDuration = 5; //5 Ticks
 	private float cooldownCounter = iFrameDuration;
 	private Vector3f previousAvatarLocation = new Vector3f(); //Used if collides with a wall to revert to non-colliding position
 
@@ -414,7 +414,7 @@ public class MyGame extends VariableFrameRateGame
 		upperChamber = new GameObject(starLarge, upperChamberS, upperChambertx);
 
 		cone.setLocalScale((new Matrix4f()).scaling(8f));
-		eye.setLocalTranslation((new Matrix4f()).translation(0f, 5f, 0f));
+		eye.setLocalTranslation((new Matrix4f()).translation(0f, 35f, 0f));
 		//stars1.setLocalScale((new Matrix4f()).scaling(8f));
 		//stars1.setLocalTranslation((new Matrix4f()).translation(0f, 3f, 0f));
 		//stars2.setLocalScale((new Matrix4f()).scaling(8f));
@@ -424,8 +424,8 @@ public class MyGame extends VariableFrameRateGame
 		sanctum.setLocalScale((new Matrix4f()).scaling(20f));
 		sanctum.setLocalRotation(new Matrix4f().rotationY((float) Math.toRadians(180)));
 		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 45f, 95f));
-		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
-		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		//upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
+		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 65f, 0f));
 		upperChamber.getRenderStates().setRenderHiddenFaces(true);
 
 		//Generate the map
@@ -470,15 +470,26 @@ public class MyGame extends VariableFrameRateGame
 					y = j- (mm.getMapHeight(1)/2);
 				}
 				if (locState == 1 || locState == 8 || locState == 9){
-					GameObject wall;
+					Entity wall = new Entity();
 					if (locState == 8){ //Windowed Wall
-						wall = new GameObject(GameObject.root(), windowS, windowtx);
+						try {
+							wall = em.createEntity(entityListSize, windowS, windowtx, "Door");
+						}
+						catch (Exception e){
+							System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+						}
 					}
-					else
-						wall = new GameObject(GameObject.root(), wallS, walltx);
+					else {
+						try {
+							wall = em.createEntity(entityListSize, wallS, walltx, "Door");
+						}
+						catch (Exception e){
+							System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+						}
+					}
 					
 					float[] wallVerts = wallS.getVertices();
-					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+					float modelOffset = (float) Math.abs(wallVerts[6] - wallVerts[7]);
 
 					wall.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
 					wall.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
@@ -508,7 +519,7 @@ public class MyGame extends VariableFrameRateGame
 					Entity door = new Entity();
 
 					float[] wallVerts = wallS.getVertices();
-					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+					float modelOffset = (float) Math.abs(wallVerts[6] - wallVerts[7]);
 
 					try {
 						door = em.createEntity(entityListSize, doorS, doortx, "Door");
@@ -540,7 +551,7 @@ public class MyGame extends VariableFrameRateGame
 					Entity door = new Entity();
 
 					float[] wallVerts = wallS.getVertices();
-					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+					float modelOffset = (float) Math.abs(wallVerts[6] - wallVerts[7]);
 					
 					try {
 						door = em.createEntity(entityListSize, doorhorizS, doortx, "Door");
@@ -814,6 +825,8 @@ public class MyGame extends VariableFrameRateGame
 			//avatarS.updateAnimation();
 			ghoulS.updateAnimation();
 
+			eye.lookAt(avatar.getWorldLocation());
+
 			//Input Manager
 			im.update((float) elapsTime);
 
@@ -990,6 +1003,7 @@ public class MyGame extends VariableFrameRateGame
 			float mouseDeltaY = prevMouseY - curMouseY;
 			cam.yaw(mouseDeltaX  * cameraMoveSpeed / (float)(elapsTime));
 			cam.pitch(mouseDeltaY  * cameraMoveSpeed / (float)(elapsTime));
+			avatar.setLocalRotation(cam.getLocalRotation());
 			protClient.sendRotateMessage(avatar.getWorldRotation());
 			prevMouseX = curMouseX;
 			prevMouseY = curMouseY;
@@ -1097,7 +1111,7 @@ public class MyGame extends VariableFrameRateGame
 			{	contactPoint = manifold.getContactPoint(j);
 				if (contactPoint.getDistance() < 0.1f)
 				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
-					if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "Ego" || obj2.getType() == "Ego" )){
+					if (!isPlayerInvincible && (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "Ego" || obj2.getType() == "Ego" || obj1.getType() == "Ghoul" || obj2.getType() == "Ghoul" )){
 						if (!obj1.equals(avatarHitbox))
 							PlayerHP -= obj1.getDamage();
 						else
@@ -1151,6 +1165,8 @@ public class MyGame extends VariableFrameRateGame
 
 	// ---------- COMBAT SECTION ----------------
 	public void shootOrbFrom(GameObject fromObject, String type){
+		protClient.sendShootMessage(fromObject.getLocalLocation(), fromObject.getLocalForwardVector(), type);
+
 		AttackSound.play();
 
 		GameObject bulletOrb;
@@ -1164,11 +1180,15 @@ public class MyGame extends VariableFrameRateGame
 				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
 		}
 
-		if (fromObject.equals(avatar))
+		Vector3f direction = new Vector3f();
+		if (fromObject.equals(avatar)){
 			bulletOrb.setLocalLocation(cam.getLocation());
-		else
+			direction = cam.getN();
+		}
+		else{
 			bulletOrb.setLocalLocation(fromObject.getLocalLocation());
-		bulletOrb.setLocalRotation(fromObject.getLocalRotation());
+			direction = fromObject.getLocalForwardVector();
+		}
 
 		double[ ] tempTransform;
 		Matrix4f translation = new Matrix4f(bulletOrb.getLocalTranslation());
@@ -1182,7 +1202,39 @@ public class MyGame extends VariableFrameRateGame
 		bulletOrb.setPhysicsObject(caps2P);
 
 		Vector3f force = new Vector3f().add(fromObject.getLocalForwardVector().mul(bulletForce));
-		protClient.sendShootMessage(force);
+		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
+	}
+
+	public void shootOrbFrom(Vector3f position, Vector3f direction, String type){
+		protClient.sendShootMessage(position, direction, type);
+		
+		AttackSound.play();
+
+		GameObject bulletOrb;
+		switch (type){
+			case "Ego": //Ghoul spawn orb ammo type
+				bulletOrb = new GameObject(GameObject.root(), egoOrbS, egoOrbtx);
+				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.05f));
+				break;
+			default: 
+				bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
+				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
+		}
+
+		bulletOrb.setLocalLocation(position);
+
+		double[ ] tempTransform;
+		Matrix4f translation = new Matrix4f(bulletOrb.getLocalTranslation());
+
+		tempTransform = toDoubleArray(translation.get(vals));
+		caps2P = (engine.getSceneGraph()).addPhysicsSphere(
+			0.001f, tempTransform, 0.1f);
+		caps2P.setBounciness(1f);
+		caps2P.setType(type);
+
+		bulletOrb.setPhysicsObject(caps2P);
+
+		Vector3f force = new Vector3f().add(direction.mul(bulletForce));
 		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
 	}
 
