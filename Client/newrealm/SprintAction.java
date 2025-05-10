@@ -19,8 +19,6 @@ public class SprintAction extends AbstractInputAction{
 
     @Override
     public void performAction(float time, Event e){
-        System.out.println("\nMovement Speed: " + game.getMovementSpeed());
         game.setMovementSpeed((float)(sprintSpeed * game.getDeltaTime() * e.getValue()));
-        System.out.println("\nSprint speed: " + (sprintSpeed * game.getDeltaTime() * e.getValue()) + "\nMovement Speed: " + game.getMovementSpeed());
     }
 }

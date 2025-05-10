@@ -94,7 +94,7 @@ public class GameObject
 	private float jumpAmount, jumpStartTime, jumpElapsedTime, jumpY;
 	private float jumpDuration = DEFAULT_JUMP_DURATION;
 	private float jumpAngle = 60.0f;
-	private float initVelocity = 20.0f;
+	private float initVelocity = 2000.0f;
 	private float v0 = (float)(initVelocity * StrictMath.sin(StrictMath.toRadians(jumpAngle)));
 
 	//------------------ CONSTRUCTORS -----------------

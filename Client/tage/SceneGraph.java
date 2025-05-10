@@ -187,6 +187,17 @@ public class SceneGraph
 		setPhysicsObjectParams(physicsBox, (new Matrix4f()).scaling(size[0]/2f, size[1]/2f, size[2]/2f));
 		return po;
 	}
+
+	/** Adds a box physics object in the physics world, with specified mass, matrix transform, size, and boolean indicating whether or not it's kinematic.
+	*  <br>
+	*  The transform is a 4x4 homogeneous matrix, stored in an array of type double, which should only contain translation and/or rotation.<br>
+	*  The size is specified using a 3-element array of type double, with desired dimensions in X, Y, and Z.<br>
+	*/
+	public PhysicsObject addPhysicsBox(float mass, double[] transform, float[] size, boolean kinematic)
+	{	po = pe.addBoxObject(pe.nextUID(), mass, transform, size, kinematic);
+		setPhysicsObjectParams(physicsBox, (new Matrix4f()).scaling(size[0]/2f, size[1]/2f, size[2]/2f));
+		return po;
+	}
 	
 	/** Adds a sphere physics object in the physics world, with specified mass, matrix transform, and radius.
 	*  <br>

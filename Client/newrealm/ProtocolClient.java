@@ -230,4 +230,20 @@ public class ProtocolClient extends GameConnectionClient
 		{	e.printStackTrace();
 		}	
 	}
+
+	// Informs the server that the local avatar has changed position.  
+	// Message Format: (move,localId,x,y,z) where x, y, and z represent the position.
+
+	public void sendShootMessage(Vector3f position)
+	{	try 
+		{	String message = new String("shoot," + id.toString());
+			message += "," + position.x();
+			message += "," + position.y();
+			message += "," + position.z();
+			
+			sendPacket(message);
+		} catch (IOException e) 
+		{	e.printStackTrace();
+		}	
+	}
 }

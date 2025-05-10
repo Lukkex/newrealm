@@ -51,6 +51,9 @@ public interface PhysicsEngine {
 	public PhysicsObject addBoxObject(int uid, float mass, double[] transform,
 			float[] size);
 
+	public PhysicsObject addBoxObject(int uid, float mass, double[] transform,
+			float[] size, boolean kinematic);
+
 	public PhysicsObject addSphereObject(int uid, float mass,
 			double[] transform, float radius);
 

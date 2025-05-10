@@ -12,6 +12,8 @@ import tage.physics.PhysicsEngineFactory;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
+import com.bulletphysics.collision.dispatch.CollisionFlags;
+import com.bulletphysics.collision.dispatch.CollisionObject;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
@@ -123,6 +125,27 @@ public class JBulletPhysicsEngine implements PhysicsEngine {
 				temp[i] = size[i]/2f;
 			}
 			JBulletBoxObject boxObject = new JBulletBoxObject(uid, mass, transform, temp);
+			this.dynamicsWorld.addRigidBody(boxObject.getRigidBody());
+			this.objects.add(boxObject);
+			return boxObject;
+		}
+
+				/**
+		 * Adds a {@link PhysicsObject} object of type Box to the physics world.
+		 */
+		public PhysicsObject addBoxObject(int uid, float mass, double[] transform, float[] size, boolean kinematic) {
+			// PhysicsEngine asks for dimensions, JBullet uses halfExtents
+			float[] temp = new float[size.length];
+			for(int i = 0; i < size.length; i++)
+			{
+				temp[i] = size[i]/2f;
+			}
+			JBulletBoxObject boxObject = new JBulletBoxObject(uid, mass, transform, temp);
+			if (kinematic){
+				boxObject.getRigidBody().setCollisionFlags(boxObject.getRigidBody().getCollisionFlags() | CollisionFlags.KINEMATIC_OBJECT);  
+				boxObject.getRigidBody().setActivationState(CollisionObject.DISABLE_DEACTIVATION);
+			}
+			
 			this.dynamicsWorld.addRigidBody(boxObject.getRigidBody());
 			this.objects.add(boxObject);
 			return boxObject;

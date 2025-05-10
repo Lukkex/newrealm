@@ -17,8 +17,8 @@ public class EntityManager
 	private MyGame game;
 	private ProtocolClient pc;
 	private Vector<Entity> entities = new Vector<Entity>();
-	private boolean hostile = false; //If hostile entities will act hostile or not
-	private float ghoulHostileDistance = 15.0f; //How close for Ghoul to start going after player
+	private boolean hostile = true; //If hostile entities will act hostile or not
+	private float ghoulHostileDistance = 10.0f; //How close for Ghoul to start going after player
 
 	public EntityManager(VariableFrameRateGame vfrg, ProtocolClient pc){	
 		this.game = (MyGame)vfrg;
@@ -173,15 +173,11 @@ public class EntityManager
 
 			}
 			else if (type == "Door"){
-				if (distance(avatarPos, temp.getWorldLocation()) <= 2.0f){
-					if (!temp.getState()) //Cannot spam raise it
-						temp.setLocalLocation(temp.getLocalLocation().add(temp.getWorldUpVector()).mul(5.0f));
-					temp.setState(true);
+				if (distance(avatarPos, temp.getWorldLocation()) <= 0.1f){
+					temp.getLocalTranslation().setRowColumn(2, 5, 3);
 				}
 				else{ //Raised, player out of range, so lower it now
-					if (temp.getState()) //Only lower if previously was raised up
-						temp.setLocalLocation(temp.getLocalLocation().add(temp.getWorldUpVector()).mul(-5.0f));
-					temp.setState(false);
+					temp.getLocalTranslation().setRowColumn(2, 5, 0);
 				}
 			}
 		}

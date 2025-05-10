@@ -18,6 +18,7 @@ import javax.swing.*;
 import org.joml.*;
 import tage.input.*;
 import tage.input.action.*;
+import tage.networking.*;
 import tage.networking.IGameConnection.ProtocolType;
 import tage.nodeControllers.*;
 import tage.physics.PhysicsEngine;
@@ -90,7 +91,7 @@ public class MyGame extends VariableFrameRateGame
 	private float pitchAmount = 0.01f;
 	private final float DEFAULT_SPEED = 0.02f;
 	private float movementSpeed = DEFAULT_SPEED;
-	private float jumpAmount = 1.0f;
+	private float jumpAmount = 0.2f;
 	private boolean isJumping = false;
 	private float bulletForce = DEFAULT_SPEED * 20.0f;
 	private float sprintSpeed = DEFAULT_SPEED * 2.0f;
@@ -404,7 +405,7 @@ public class MyGame extends VariableFrameRateGame
 		chamber.getRenderStates().setRenderHiddenFaces(true);
 
 		cone = new GameObject(GameObject.root(), coneS, conetx);
-		eye = new GameObject(GameObject.root(), eyeS, eyetx);
+		eye = new GameObject(sanctum, eyeS, eyetx);
 
 		//Utilizes Scene Graph
 		stars1 = new GameObject(sanctum, stars1S, stars1tx);
@@ -413,8 +414,7 @@ public class MyGame extends VariableFrameRateGame
 		upperChamber = new GameObject(starLarge, upperChamberS, upperChambertx);
 
 		cone.setLocalScale((new Matrix4f()).scaling(8f));
-		eye.setLocalScale((new Matrix4f()).scaling(2f));
-		eye.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
+		eye.setLocalTranslation((new Matrix4f()).translation(0f, 5f, 0f));
 		//stars1.setLocalScale((new Matrix4f()).scaling(8f));
 		//stars1.setLocalTranslation((new Matrix4f()).translation(0f, 3f, 0f));
 		//stars2.setLocalScale((new Matrix4f()).scaling(8f));
@@ -427,6 +427,9 @@ public class MyGame extends VariableFrameRateGame
 		upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
 		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 15f, 0f));
 		upperChamber.getRenderStates().setRenderHiddenFaces(true);
+
+		//Generate the map
+		buildMap(1);
 
 		avatar.setLocalScale((new Matrix4f()).scaling(avatarHeight));
 		
@@ -452,11 +455,13 @@ public class MyGame extends VariableFrameRateGame
 		//temp variables
 		int x = 0;
 		int y = 0;
-		int entityListSize = em.getEntityListSize();
+		int entityListSize;
 		int locState = 0;
 
 		for (int i = 0; i < mm.getMapWidth(mapID); i++){
 			for (int j = 0; j < mm.getMapHeight(mapID); j++){
+				entityListSize = em.getEntityListSize();
+				
 				locState = mm.getMapLocationState(mapID, i, j);
 
 				//Create Wall at location
@@ -493,7 +498,7 @@ public class MyGame extends VariableFrameRateGame
 					}
 
 					float[] size = {modelOffset * wallWidth, modelOffset * wallHeight, modelOffset * wallWidth};
-					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size);
+					PhysicsObject cube = (engine.getSceneGraph()).addPhysicsBox(0.0f, toDoubleArray((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)).get(vals)), size, true);
 					cube.setBounciness(0);
 					mapHitboxes.add(cube);
 					wall.setPhysicsObject(cube);
@@ -504,12 +509,14 @@ public class MyGame extends VariableFrameRateGame
 
 					float[] wallVerts = wallS.getVertices();
 					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+
 					try {
 						door = em.createEntity(entityListSize, doorS, doortx, "Door");
 					}
 					catch (Exception e){
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
-					}	
+					}
+
 					door.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
 					door.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
 					//door.yaw(180);;
@@ -530,10 +537,17 @@ public class MyGame extends VariableFrameRateGame
 				}
 				//Create N-S door at location
 				else if (locState == 3){
-					GameObject door = new GameObject(GameObject.root(), doorhorizS, doortx);
+					Entity door = new Entity();
 
 					float[] wallVerts = wallS.getVertices();
 					float modelOffset = (float) Math.abs(wallVerts[0] - wallVerts[1]);
+					
+					try {
+						door = em.createEntity(entityListSize, doorhorizS, doortx, "Door");
+					}
+					catch (Exception e){
+						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+					}
 
 					door.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
 					door.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
@@ -560,17 +574,21 @@ public class MyGame extends VariableFrameRateGame
 					catch (Exception e){
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
 					}
-
-					entityListSize++;
 				}
 				else if (locState == '@'){ //Can re-use these to save space
 					try {
 						em.createEntity(entityListSize, padS, padtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling);
+						entityListSize++;
 						rc_reverse_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing0S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						entityListSize++;
 						rc_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing1S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						entityListSize++;
 						rc_reverse_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing2S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						entityListSize++;
 						rc_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing3S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						entityListSize++;
 						rc_reverse_ObjectsToAddLater.add(em.createEntity(entityListSize, padRing4S, padRingtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
+						entityListSize++;
 						rc_ObjectsToAddLater.add(em.createEntity(entityListSize, padArrowS, padArrowtx, new Vector3f((float) (x * mapUnitSize), floorYLevel, (float) (y * mapUnitSize)), true, "NextLevelPad", padScaling));
 						
 					}
@@ -578,6 +596,8 @@ public class MyGame extends VariableFrameRateGame
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
 					}
 				}
+				
+				entityListSize++;
 			}
 		}
 		x = (mm.getPlayerLocation(mapID)[0] - (mm.getMapWidth(1)/2));
@@ -716,18 +736,7 @@ public class MyGame extends VariableFrameRateGame
 		float radius = 0.75f;
 		float height = 2.0f;
 		double[ ] tempTransform;
-		Matrix4f translation = new Matrix4f(eye.getLocalTranslation());
-		tempTransform = toDoubleArray(translation.get(vals));
-		caps1P = (engine.getSceneGraph()).addPhysicsCapsuleX(
-		mass, tempTransform, radius, height);
-		caps1P.setBounciness(0.7f);
-		eye.setPhysicsObject(caps1P);
-		//translation = new Matrix4f(dol2.getLocalTranslation());
-		tempTransform = toDoubleArray(translation.get(vals));
-		caps2P = (engine.getSceneGraph()).addPhysicsCapsuleX(
-		mass, tempTransform, radius, height);
-		caps2P.setBounciness(0.8f);
-		//dol2.setPhysicsObject(caps2P);
+		Matrix4f translation = new Matrix4f();
 		translation = new Matrix4f(floor.getLocalTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
 		planeP = (engine.getSceneGraph()).addPhysicsStaticPlane(
@@ -737,9 +746,6 @@ public class MyGame extends VariableFrameRateGame
 		
 		engine.enableGraphicsWorldRender();
 		engine.enablePhysicsWorldRender();
-		
-		//Generate the map
-		buildMap(1);
 	}
 
 	public void setEarParameters(){
@@ -832,6 +838,11 @@ public class MyGame extends VariableFrameRateGame
 			loc = avatar.getWorldLocation();
 			height = floor.getHeight(loc.x(), loc.z());
 			avatar.setLocalLocation(new Vector3f(loc.x(), height, loc.z()));
+
+			if (PlayerHP <= 0){
+				PlayerHP = 0;
+				GameOver();
+			}
 
 			// Broadcast any new message and update HUD 1
 			broadcast(broadcastMessage, hudColor);
@@ -1171,6 +1182,7 @@ public class MyGame extends VariableFrameRateGame
 		bulletOrb.setPhysicsObject(caps2P);
 
 		Vector3f force = new Vector3f().add(fromObject.getLocalForwardVector().mul(bulletForce));
+		protClient.sendShootMessage(force);
 		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
 	}
 
