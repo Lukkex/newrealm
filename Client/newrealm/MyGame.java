@@ -188,9 +188,6 @@ public class MyGame extends VariableFrameRateGame
 		super();
 		gm = new GhostManager(this);
 		em = new EntityManager(this, protClient);
-		mm = new MapManager();
-
-		floorSize = mm.getMapHeight(1) * mapUnitSize * floorSize;
 
 		try {
 			System.out.println("\nIP Address (Enter for default - " + DEFAULT_IP_ADDRESS + "): ");
@@ -213,19 +210,23 @@ public class MyGame extends VariableFrameRateGame
 			else
 				this.serverProtocol = ProtocolType.UDP;
 				
+			System.out.println("\nEnable Performance Mode? (y/n): ");
+			String mode = scan.nextLine();
+
+			if (mode.toLowerCase().equals("y")) mm.enablePerformanceMode();
 		}
 		catch (Exception f){
 			System.out.println("\nInvalid parameters for network connection.\n\nIP, Port, Protocol (TCP | UDP)\n");
 		}
+		mm = new MapManager();
+
+		floorSize = mm.getMapHeight(1) * mapUnitSize * floorSize;
 	}
 
 	public MyGame(String serverAddress, int serverPort, String protocol){ 
 		super(); 
 		gm = new GhostManager(this);
 		em = new EntityManager(this, protClient);
-		mm = new MapManager();
-		
-		floorSize = mm.getMapHeight(1) * mapUnitSize * floorSize;
 
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
@@ -233,6 +234,18 @@ public class MyGame extends VariableFrameRateGame
 			this.serverProtocol = ProtocolType.TCP;
 		else
 			this.serverProtocol = ProtocolType.UDP;
+
+					System.out.println("\nEnable Performance Mode? (y/n): ");
+			String mode = scan.nextLine();
+		try{
+			if (mode.toLowerCase().equals("y")) mm.enablePerformanceMode();
+		}
+				catch (Exception f){
+			System.out.println("\nInvalid parameters for network connection.\n\nIP, Port, Protocol (TCP | UDP)\n");
+		}
+		mm = new MapManager();
+		
+		floorSize = mm.getMapHeight(1) * mapUnitSize * floorSize;
 	}
 
 	public static void main(String[] args){	
@@ -490,7 +503,6 @@ public class MyGame extends VariableFrameRateGame
 				if (locState != 0){
 					x = i - (mm.getMapWidth(1)/2);
 					y = j- (mm.getMapHeight(1)/2);
-				}
 				if (locState == 1 || locState == 8 || locState == 9){
 					Entity wall = new Entity();
 					if (locState == 8){ //Windowed Wall
@@ -644,6 +656,7 @@ public class MyGame extends VariableFrameRateGame
 				}
 				
 				entityListSize++;
+				}
 			}
 		}
 		x = (mm.getPlayerLocation(mapID)[0] - (mm.getMapWidth(1)/2));
@@ -965,12 +978,12 @@ public class MyGame extends VariableFrameRateGame
 
 	//Broadcasting function that can announce a broadcast message on the HUD
 	public void broadcast(String message){
-		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + "| TIME: " + Double.toString(totalElapsedTime) + message, Constants.hudWhiteColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + " | TIME: " + Double.toString(totalElapsedTime) + message, Constants.hudWhiteColor, 15, 15);
 	}
 
 	//Overloaded in case you want something other than the default white color for the HUD
 	public void broadcast(String message, Vector3f HUDColor){
-		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + "| TIME: " + Double.toString(totalElapsedTime) + message, HUDColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + " | TIME: " + Double.toString(totalElapsedTime) + message, HUDColor, 15, 15);
 	}
 
 	public void setBroadcastMessage(String message){
@@ -1172,7 +1185,7 @@ public class MyGame extends VariableFrameRateGame
 			for (int j = 0; j < manifold.getNumContacts(); j++)
 			{	contactPoint = manifold.getContactPoint(j);
 				if (contactPoint.getDistance() < 0.1f)
-				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
+				{	//System.out.println("---- hit between " + obj1 + " and " + obj2);
 					if (!isPlayerInvincible && (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "Ego" || obj2.getType() == "Ego" || obj1.getType() == "Ghoul" || obj2.getType() == "Ghoul" )){
 						if (!obj1.equals(avatarHitbox))
 							PlayerHP -= obj1.getDamage();

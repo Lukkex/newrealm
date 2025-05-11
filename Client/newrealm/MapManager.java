@@ -10,6 +10,7 @@ public class MapManager {
     private int map1Height = 20;
     private int map2Width = 16;
     private int map2Height = 25;
+    private boolean performanceMode = false;
     private ArrayList<Map> maps = new ArrayList<Map>();
 
     private class Map {
@@ -82,6 +83,7 @@ public class MapManager {
         //P is where player starts
         //@ is next level
 
+        
         char[][] temp  = {
             {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
             {1,  0,  0,  0,  'G',  0, 0, 0, 1, 0, 'G', 1, 0, 0, 0, 0, 0, 1, 0, 1},
@@ -110,9 +112,45 @@ public class MapManager {
             {1,  0,  1,  0,  8,    0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1},
             {1,  'G',  8,  0,  0,  0, 1, 5, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1, 1, 1},
             {1,  1,  1,  1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        }; 
+
+        /*
+        char[][] temp  = {
+            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1,  3,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  1,  1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  2,  0, 'G', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 'P', 1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        };
+            map1Height = 9;
+        */
+
+        char[][] perftemp  = {
+            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1,  3,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  1,  1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  2,  0, 'G', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 'P', 1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
         };
 
-        Map map1 = new Map(1, map1Width, map1Height);
+        Map map1;
+        if (performanceMode){
+            map1Height = 9;
+            map1 = new Map(1, map1Width, map1Height);
+            map1.setMapLayout(perftemp);
+        }
+        else{
+            map1 = new Map(1, map1Width, map1Height);
+            map1.setMapLayout(temp);
+        }
+
+        map1 = new Map(1, map1Width, map1Height);
         map1.setMapLayout(temp);
 
         maps.add(new Map()); //Empty map; will make it so Map #1 is at index 1 and not 0
@@ -163,5 +201,10 @@ public class MapManager {
 
     public int[] getPlayerLocation(int mapID){
         return maps.get(mapID).getPlayerLocation();
+    }
+
+    public void enablePerformanceMode(){
+        performanceMode = true;
+        System.out.println("\nPerformance Mode Enabled!\n");
     }
 }
