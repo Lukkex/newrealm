@@ -821,9 +821,6 @@ public class MyGame extends VariableFrameRateGame
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
 
-			sVal = (String) String.format("%.2f", (System.currentTimeMillis() - gameStartTime)/1000);
-			totalElapsedTime = Double.parseDouble(sVal);
-
 			//Player Updates
 			minimapController.updateCameraPosition();
 			avatar.setLocalRotation(cam.getLocalRotation());
@@ -920,6 +917,10 @@ public class MyGame extends VariableFrameRateGame
 
 			// Broadcast any new message and update HUD 1
 			broadcast(broadcastMessage, hudColor);
+
+			
+			sVal = (String) String.format("%.2f", (System.currentTimeMillis() - gameStartTime)/1000);
+			totalElapsedTime = Double.parseDouble(sVal);
 		}
 
 		//Calls once more so that all child nodes properly snap to new parents (e.g. wires)
