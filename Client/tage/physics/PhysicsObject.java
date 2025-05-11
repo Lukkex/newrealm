@@ -1,4 +1,5 @@
 package tage.physics;
+import tage.GameObject;
 
 /** If using TAGE, physics objects should be created using the methods in the TAGE Scenegraph class. */
 
@@ -19,6 +20,12 @@ public interface PhysicsObject {
 	 *            column-major order
 	 */
 	public void setTransform(double[] transform);
+
+	/** To link a physics object to a game object without it being actually attached */
+	public void setDisconnectedParent(GameObject obj);
+
+	/** Returns the disconnected parent */
+	public GameObject getDisconnectedParent();
 
 	/**
 	 * Returns a 16-element array of doubles representing the 4x4 transformation

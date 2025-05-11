@@ -24,6 +24,7 @@ public class Entity extends GameObject
 	private int firingCooldown;
 	private int firingCooldownDecrement = 1;
 	private boolean state = false;
+	private boolean isKilled = false;
 
 	public Entity(){
 		super();
@@ -79,7 +80,11 @@ public class Entity extends GameObject
 		this.type = type;
 	}
 	
-	public UUID getID() { return uuid; }
+	//public UUID getID() { return uuid; }
+
+	public int getID() { return int_id; } //Local to the client
+
+	public void setID(int id){ this.int_id = id; }
 
 	public GameObject getGameObject(){
 		return this.go;
@@ -101,9 +106,13 @@ public class Entity extends GameObject
 	public boolean getState() { return this.state; }
 
 	public void takeDamage(int damage) { HP -= damage; if (HP <= 0) this.getRenderStates().disableRendering();}
+	public int getHP() { return this.HP; }
 
 	public void setFiringCooldown(int cooldown) { this.firingCooldown = cooldown; }
 	public int getFiringCooldown() { return this.firingCooldown; }
+
+	public void setIsKilled (boolean state){ this.isKilled = state; }
+	public boolean isKilled(){ return isKilled; }
 
 	public int getDefaultFiringCooldown() { return this.DEFAULT_FIRING_COOLDOWN; }
 

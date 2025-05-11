@@ -96,7 +96,7 @@ public class GameObject
 	private float jumpAngle = 60.0f;
 	private float initVelocity = 2000.0f;
 	private float v0 = (float)(initVelocity * StrictMath.sin(StrictMath.toRadians(jumpAngle)));
-
+	private int HP = 100;
 	//------------------ CONSTRUCTORS -----------------
 
 	// only applicable for creating the root node
@@ -324,6 +324,11 @@ public class GameObject
 	/** Sets whether or not object is currently jumping */
 	public void setIsJumping(boolean s){
 		this.isJumping = s;
+	}
+
+	/** Take Specified damage */
+	public void takeDamage(int damage){
+		this.HP -= damage;
 	}
 	
 	// ------------ SCENE GRAPH TRAVERSAL for MATRICES -----------------

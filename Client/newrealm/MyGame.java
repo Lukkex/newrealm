@@ -50,6 +50,7 @@ public class MyGame extends VariableFrameRateGame
 	private float avatarHeight = 0.3f;
 	private PhysicsObject avatarHitbox;
 	private int PlayerHP = 100;
+	private int killCount = 0;
 	private boolean isPlayerInvincible = false;
 	private float iFrameDuration = 5; //5 Ticks
 	private float cooldownCounter = iFrameDuration;
@@ -57,7 +58,7 @@ public class MyGame extends VariableFrameRateGame
 
 	//Sound
 	private IAudioManager audioMgr;
-	private Sound AttackSound, BGSound;
+	private Sound AttackSound, BGSound, GhoulAttackSound;
 
 	//Pseudo Physics
 	private Vector<GameObject> pseudoPhysicsObjects = new Vector<GameObject>();
@@ -168,12 +169,17 @@ public class MyGame extends VariableFrameRateGame
 	private ObjShape wallS, windowS, doorS, doorhorizS;
 	private TextureImage walltx, windowtx, doortx;
 	private Vector<PhysicsObject> mapHitboxes = new Vector<PhysicsObject>();
+	private Vector<PhysicsObject> entityHitboxes = new Vector<PhysicsObject>();
 
 	private float mapUnitSize = 4.0f;
 	private float wallWidth = mapUnitSize/2.0f;
 	private float wallHeight = 2.5f;
 	private float floorSize = 0.55555f;
 	private float floorYLevel = -1f;
+
+	//General-Use Temps
+	private double[] tempTrans;
+	private Matrix4f tempMat4;
 
 	public MyGame(){
 		super();
@@ -348,17 +354,29 @@ public class MyGame extends VariableFrameRateGame
 
 		@Override
 	public void loadSounds()
-	{ AudioResource resource1, resource2;
+	{ AudioResource resource1, resource2, resource3;
 		audioMgr = engine.getAudioManager();
 		resource1 = audioMgr.createAudioResource("AttackSound.wav", AudioResourceType.AUDIO_SAMPLE);
-		resource2 = audioMgr.createAudioResource("KnowMyName.wav", AudioResourceType.AUDIO_SAMPLE);
+		resource2 = audioMgr.createAudioResource("FatalistLoop.wav", AudioResourceType.AUDIO_SAMPLE);
+		resource3 = audioMgr.createAudioResource("GhoulAttackSound.wav", AudioResourceType.AUDIO_SAMPLE);
 		AttackSound = new Sound(resource1, SoundType.SOUND_EFFECT, 100, false);
 		BGSound = new Sound(resource2, SoundType.SOUND_EFFECT, 2, true);
+		GhoulAttackSound = new Sound(resource3, SoundType.SOUND_EFFECT, 100, false);
+		
 		AttackSound.initialize(audioMgr);
+
+		GhoulAttackSound.initialize(audioMgr);
+
 		BGSound.initialize(audioMgr);
+
 		AttackSound.setMaxDistance(10.0f);
 		AttackSound.setMinDistance(0.5f);
 		AttackSound.setRollOff(5.0f);
+
+		GhoulAttackSound.setMaxDistance(10.0f);
+		GhoulAttackSound.setMinDistance(0.5f);
+		GhoulAttackSound.setRollOff(5.0f);
+
 		BGSound.setMaxDistance(10.0f);
 		BGSound.setMinDistance(0.5f);
 		BGSound.setRollOff(5.0f);
@@ -425,8 +443,8 @@ public class MyGame extends VariableFrameRateGame
 		sanctum.setLocalScale((new Matrix4f()).scaling(20f));
 		sanctum.setLocalRotation(new Matrix4f().rotationY((float) Math.toRadians(180)));
 		sanctum.setLocalTranslation((new Matrix4f()).translation(0f, 45f, 95f));
-		//upperChamber.setLocalScale((new Matrix4f()).scaling(8f));
-		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 65f, 0f));
+		upperChamber.setLocalScale((new Matrix4f()).scaling(25f));
+		upperChamber.setLocalTranslation((new Matrix4f()).translation(0f, 35f, 0f));
 		upperChamber.getRenderStates().setRenderHiddenFaces(true);
 
 		//Generate the map
@@ -580,12 +598,25 @@ public class MyGame extends VariableFrameRateGame
 				}
 				//Create a Ghoul Spawn at location
 				else if (locState == 'G'){
+					Entity ghoul = new Entity();
 					try {
-						em.createEntity(entityListSize, ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul", ghoulScaling);
+						ghoul = em.createEntity(entityListSize, ghoulS, ghoultx, new Vector3f((float) (x * mapUnitSize), 0f, (float) (y * mapUnitSize)), true, "Ghoul", ghoulScaling);
 					}
 					catch (Exception e){
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
 					}
+
+					ghoul.setID(entityListSize);
+
+					tempMat4 = new Matrix4f(avatar.getLocalTranslation());
+					tempTrans = toDoubleArray(tempMat4.get(vals));
+					PhysicsObject ghoulHitbox = (engine.getSceneGraph()).addPhysicsCylinder(
+						0f, tempTrans, 0.5f, 1f);
+					ghoulHitbox.setBounciness(0f);
+					ghoulHitbox.setFriction(0f);
+					ghoulHitbox.setType("Ghoul");
+					ghoulHitbox.setDisconnectedParent(ghoul);
+					entityHitboxes.add(ghoulHitbox); //Will now update every frame to go to this specific ghoul object
 				}
 				else if (locState == '@'){ //Can re-use these to save space
 					try {
@@ -738,9 +769,10 @@ public class MyGame extends VariableFrameRateGame
 
 		// Sound
 		AttackSound.setLocation(avatar.getWorldLocation());
+		GhoulAttackSound.setLocation(avatar.getWorldLocation());
 		BGSound.setLocation(ground.getWorldLocation());
 		setEarParameters();
-		//BGSound.play();
+		BGSound.play(); //Plays background music
 
 		//Physics
 		// --- initialize physics system ---
@@ -793,9 +825,17 @@ public class MyGame extends VariableFrameRateGame
 
 			invincibilityWindow((float) elapsTime); //Check if invincible, aka has been recently damaged
 
+			//Update hitboxes
 			Matrix4f translation = new Matrix4f(avatar.getLocalTranslation());
 			temp = toDoubleArray((new Matrix4f(avatar.getLocalTranslation())).get(vals));
 			avatarHitbox.setTransform(temp);
+
+			//Updates all entity hitboxes to go to where their disconnected parent is
+			for (PhysicsObject po : entityHitboxes){
+				translation = new Matrix4f(po.getDisconnectedParent().getLocalTranslation());
+				temp = toDoubleArray((new Matrix4f(po.getDisconnectedParent().getLocalTranslation())).get(vals));
+				po.setTransform(temp);
+			}
 
 			// ---------- MAP COMPONENTS & EXTRAS ----------------
 			eyeOfEgo.lookAt(avatar);
@@ -915,12 +955,12 @@ public class MyGame extends VariableFrameRateGame
 
 	//Broadcasting function that can announce a broadcast message on the HUD
 	public void broadcast(String message){
-		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + message, Constants.hudWhiteColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + message, Constants.hudWhiteColor, 15, 15);
 	}
 
 	//Overloaded in case you want something other than the default white color for the HUD
 	public void broadcast(String message, Vector3f HUDColor){
-		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + message, HUDColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + message, HUDColor, 15, 15);
 	}
 
 	public void setBroadcastMessage(String message){
@@ -1136,8 +1176,23 @@ public class MyGame extends VariableFrameRateGame
 						System.out.println("\nPlayer collided with an object!");
 					}
 					else if ((obj1.getType() == "Ghoul"  || obj2.getType() == "Ghoul" ) && (obj1.getType() == "Eye"  || obj2.getType() == "Eye" )){
-						
-						System.out.println("\nEnemy damaged!");
+						if (obj1.getType() == "Ghoul"){
+							obj1.getDisconnectedParent().takeDamage(50);
+							if (!((Entity) (obj1.getDisconnectedParent())).isKilled() && ((Entity) (obj1.getDisconnectedParent())).getHP() <= 0){
+								((Entity) (obj1.getDisconnectedParent())).setIsKilled(true);
+								killCount++;
+							}
+						}
+						else {
+							obj2.getDisconnectedParent().takeDamage(50);
+							obj2.getDisconnectedParent().takeDamage(50);
+							if (!((Entity) (obj2.getDisconnectedParent())).isKilled() && ((Entity) (obj2.getDisconnectedParent())).getHP() <= 0){
+								((Entity) (obj2.getDisconnectedParent())).setIsKilled(true);
+								killCount++;
+							}
+						}
+						System.out.println("\nEnemy damaged!"); //50 HP taken away out of default 100
+
 					}
 					break;
 				}
@@ -1183,15 +1238,15 @@ public class MyGame extends VariableFrameRateGame
 	public void shootOrbFrom(GameObject fromObject, String type){
 		protClient.sendShootMessage(fromObject.getLocalLocation(), fromObject.getLocalForwardVector(), type);
 
-		AttackSound.play();
-
 		GameObject bulletOrb;
 		switch (type){
 			case "Ego": //Ghoul spawn orb ammo type
+				GhoulAttackSound.play();
 				bulletOrb = new GameObject(GameObject.root(), egoOrbS, egoOrbtx);
 				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.05f));
 				break;
 			default: 
+				AttackSound.play();
 				bulletOrb = new GameObject(GameObject.root(), eyeS, eyetx);
 				bulletOrb.setLocalScale((new Matrix4f()).scaling(0.1f));
 		}

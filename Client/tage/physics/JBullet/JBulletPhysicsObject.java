@@ -3,6 +3,7 @@ package tage.physics.JBullet;
 import javax.vecmath.Vector3f;
 import java.util.HashMap;
 
+import tage.GameObject;
 import tage.physics.PhysicsObject;
 
 import com.bulletphysics.collision.shapes.CollisionShape;
@@ -30,6 +31,7 @@ public abstract class JBulletPhysicsObject implements PhysicsObject {
     private RigidBodyConstructionInfo rbInfo;
     private String type = "";
     private int damageAmount = 20; //Default is 20HP
+    private GameObject parent = null;
 
 /** If using TAGE, physics objects should be created using the methods in the TAGE Scenegraph class, rather than this constructor. 
 */
@@ -62,6 +64,14 @@ public abstract class JBulletPhysicsObject implements PhysicsObject {
     public int getUID() {
         return uid;
     }
+
+    public void setDisconnectedParent(GameObject obj){
+		this.parent = obj;
+	}
+    
+    public GameObject getDisconnectedParent(){
+		return this.parent;
+	}
 
     public void setTransform(double[] xform) {
         synchronized(this)

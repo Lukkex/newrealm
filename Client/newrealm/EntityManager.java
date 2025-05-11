@@ -92,7 +92,7 @@ public class EntityManager
 		return newEntity;
 	}
 	
-	public void removeEntity(UUID id)
+	public void removeEntity(int id)
 	{	Entity entity = findEntity(id);
 		if(entity != null)
 		{	game.getEngine().getSceneGraph().removeGameObject(entity);
@@ -103,6 +103,32 @@ public class EntityManager
 		}
 	}
 
+	/* 
+	public void removeEntity(UUID id)
+	{	Entity entity = findEntity(id);
+		if(entity != null)
+		{	game.getEngine().getSceneGraph().removeGameObject(entity);
+			entities.remove(entity);
+		}
+		else
+		{	System.out.println("tried to remove, but unable to find entity in list");
+		}
+	}
+	*/
+	
+	private Entity findEntity(int id)
+	{	Entity entity;
+		Iterator<Entity> it = entities.iterator();
+		while(it.hasNext())
+		{	entity = it.next();
+			if(entity.getID() == id)
+			{	return entity;
+			}
+		}		
+		return null;
+	}
+
+	/* 
 	private Entity findEntity(UUID id)
 	{	Entity entity;
 		Iterator<Entity> it = entities.iterator();
@@ -113,9 +139,9 @@ public class EntityManager
 			}
 		}		
 		return null;
-	}
+	}*/
 	
-	public void updateEntityPosition(UUID id, Vector3f position)
+	public void updateEntityPosition(int id, Vector3f position)
 	{	Entity entity = findEntity(id);
 		if (entity != null)
 		{	entity.setPosition(position);
@@ -125,7 +151,7 @@ public class EntityManager
 		}
 	}
 
-	public void updateEntityRotation(UUID id, Matrix4f rotation)
+	public void updateEntityRotation(int id, Matrix4f rotation)
 	{	Entity entity = findEntity(id);
 		if (entity != null)
 		{	entity.setRotation(rotation);
@@ -152,25 +178,26 @@ public class EntityManager
 
 			if (type == "Ghoul"){
 				//Ghoul continues to look towards and follow the *nearest* player
-				if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= ghoulHostileDistance){
-					temp.lookAt(avatar);
-					if (hostile){
-							temp.move(0.01f * deltaTime);
+				if (temp.getHP() > 0){
+					if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= ghoulHostileDistance){
+						temp.lookAt(avatar);
+						if (hostile){
+								temp.move(0.01f * deltaTime);
 
-						if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
-							game.setBroadcastMessage(" | ENEMY IS CLOSING IN!");
-							game.setBroadcastMessageColor(Constants.hudRedColor);
+							if (game.distance(temp.getWorldLocation(), avatar.getWorldLocation()) <= 4.0f){
+								game.setBroadcastMessage(" | ENEMY IS CLOSING IN!");
+								game.setBroadcastMessageColor(Constants.hudRedColor);
+							}
+							else {
+								game.setBroadcastMessage("");
+								game.setBroadcastMessageColor(Constants.hudWhiteColor);
+							}
 						}
-						else {
-							game.setBroadcastMessage("");
-							game.setBroadcastMessageColor(Constants.hudWhiteColor);
-						}
+
+						if (temp.updateFiringCooldown(deltaTime))
+							game.shootOrbFrom(temp, "Ego");
 					}
-
-					if (temp.updateFiringCooldown(deltaTime))
-						game.shootOrbFrom(temp, "Ego");
 				}
-
 			}
 			else if (type == "Door"){
 				if (distance(avatarPos, temp.getWorldLocation()) <= 3f){
