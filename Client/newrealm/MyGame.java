@@ -169,15 +169,15 @@ public class MyGame extends VariableFrameRateGame
 	private TextureImage egoOrbtx;
 
 	// ---------- MAP #1 ---------------- //
-	private ObjShape wallS, windowS, doorS, doorhorizS;
-	private TextureImage walltx, windowtx, doortx;
+	private ObjShape wallS, windowS, doorS, doorhorizS, chestS;
+	private TextureImage walltx, windowtx, doortx, chesttx;
 	private Vector<PhysicsObject> mapHitboxes = new Vector<PhysicsObject>();
 	private Vector<PhysicsObject> entityHitboxes = new Vector<PhysicsObject>();
 
 	private float mapUnitSize = 4.0f;
 	private float wallWidth = mapUnitSize/2.0f;
 	private float wallHeight = 2.5f;
-	private float floorSize = 0.55555f;
+	private float floorSize = 0.85555f;
 	private float floorYLevel = -1f;
 
 	//General-Use Temps
@@ -266,6 +266,7 @@ public class MyGame extends VariableFrameRateGame
 		windowS = new ImportedModel("window.obj");
 		doorS = new ImportedModel("door.obj");
 		doorhorizS = new ImportedModel("doorhoriz.obj");
+		chestS = new ImportedModel("chest.obj");
 
 		chamberS = new ImportedModel("Chamber.obj");
 
@@ -334,6 +335,7 @@ public class MyGame extends VariableFrameRateGame
 		walltx = new TextureImage("wall.png");
 		windowtx = new TextureImage("window.png");
 		doortx = new TextureImage("door.png");
+		chesttx = new TextureImage("Star.jpg");
 
 		//Level Pad
 		padtx = new TextureImage("pad.png");
@@ -642,7 +644,27 @@ public class MyGame extends VariableFrameRateGame
 						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
 					}
 				}
-				
+				else if (locState == 5){
+					Entity chest = new Entity();
+					try {
+						chest = em.createEntity(entityListSize, chestS, chesttx, "Chest");
+					}
+					catch (Exception e){
+						System.out.println("\nCouldn't create Entity with ID " + entityListSize);
+					}
+
+					float[] wallVerts = wallS.getVertices();
+					float modelOffset = (float) Math.abs(wallVerts[6] - wallVerts[7]);
+
+					chest.setID(entityListSize);
+
+					chest.setLocalScale((new Matrix4f()).scale(wallWidth, wallHeight, wallWidth));
+					chest.setLocalTranslation((new Matrix4f()).translation((float) (x * mapUnitSize), (modelOffset * wallHeight/2.0f) - (modelOffset/2.0f), (float) (y * mapUnitSize)));
+					
+					chest.getRenderStates().setRenderHiddenFaces(true);
+					chest.getRenderStates().setTiling(1);
+					chest.getRenderStates().hasLighting(false);
+				}
 				entityListSize++;
 			}
 		}
