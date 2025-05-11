@@ -51,6 +51,9 @@ public class MyGame extends VariableFrameRateGame
 	private PhysicsObject avatarHitbox;
 	private int PlayerHP = 100;
 	private int killCount = 0;
+	private double totalElapsedTime = 0.0f;
+	private double gameStartTime = 0.0f;
+	private String sVal = (String) String.format("%.2f", totalElapsedTime);
 	private boolean isPlayerInvincible = false;
 	private float iFrameDuration = 5; //5 Ticks
 	private float cooldownCounter = iFrameDuration;
@@ -346,7 +349,7 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void loadSkyBoxes() {
-		fluffyClouds = (engine.getSceneGraph()).loadCubeMap("fluffyClouds");
+		//fluffyClouds = (engine.getSceneGraph()).loadCubeMap("fluffyClouds");
 		eyeRedSky = (engine.getSceneGraph()).loadCubeMap("eyeRedSky");
 		(engine.getSceneGraph()).setActiveSkyBoxTexture(eyeRedSky);
 		(engine.getSceneGraph()).setSkyBoxEnabled(true);
@@ -797,6 +800,9 @@ public class MyGame extends VariableFrameRateGame
 		cam.yaw(90);
 		engine.enableGraphicsWorldRender();
 		//engine.enablePhysicsWorldRender();
+
+		gameStartTime = System.currentTimeMillis();
+		totalElapsedTime = System.currentTimeMillis();
 	}
 
 	public void setEarParameters(){
@@ -814,6 +820,9 @@ public class MyGame extends VariableFrameRateGame
 			lastFrameTime = currFrameTime;
 			currFrameTime = System.currentTimeMillis();
 			elapsTime = (currFrameTime - lastFrameTime) / 10.0;
+
+			sVal = (String) String.format("%.2f", (System.currentTimeMillis() - gameStartTime)/1000);
+			totalElapsedTime = Double.parseDouble(sVal);
 
 			//Player Updates
 			minimapController.updateCameraPosition();
@@ -955,12 +964,12 @@ public class MyGame extends VariableFrameRateGame
 
 	//Broadcasting function that can announce a broadcast message on the HUD
 	public void broadcast(String message){
-		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + message, Constants.hudWhiteColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + "| TIME: " + Double.toString(totalElapsedTime) + message, Constants.hudWhiteColor, 15, 15);
 	}
 
 	//Overloaded in case you want something other than the default white color for the HUD
 	public void broadcast(String message, Vector3f HUDColor){
-		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + message, HUDColor, 15, 15);
+		(engine.getHUDmanager()).setHUD1("HP: " + Integer.toString(PlayerHP) + " | KILLS: " + Integer.toString(killCount) + "| TIME: " + Double.toString(totalElapsedTime) + message, HUDColor, 15, 15);
 	}
 
 	public void setBroadcastMessage(String message){
