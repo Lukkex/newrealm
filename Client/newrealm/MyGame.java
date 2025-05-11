@@ -895,7 +895,7 @@ public class MyGame extends VariableFrameRateGame
 			setEarParameters();
 
 			//Camera operations
-			cam.setLocation(avatar.getWorldLocation());
+			cam.setLocation(avatar.getWorldLocation().add(cam.getN().mul(0.01f)));
 
 			//avatar cannot go beneath the Y level of the floor plane
 			if (avatar.getWorldLocation().y() < floor.getWorldLocation().y())
@@ -1264,7 +1264,7 @@ public class MyGame extends VariableFrameRateGame
 		Vector3f direction = new Vector3f();
 		if (fromObject.equals(avatar)){
 			bulletOrb.setLocalLocation(cam.getLocation());
-			direction = cam.getN();
+			direction = (cam.getLocation().sub(avatar.getWorldLocation())).negate();
 		}
 		else{
 			bulletOrb.setLocalLocation(fromObject.getLocalLocation());
@@ -1282,7 +1282,7 @@ public class MyGame extends VariableFrameRateGame
 
 		bulletOrb.setPhysicsObject(caps2P);
 
-		Vector3f force = new Vector3f().add(fromObject.getLocalForwardVector().mul(bulletForce));
+		Vector3f force = new Vector3f().add(direction.mul(bulletForce));
 		bulletOrb.getPhysicsObject().applyForce(force.x(), force.y(), force.z(), 0.0f, 0.0f, 0.0f);
 	}
 

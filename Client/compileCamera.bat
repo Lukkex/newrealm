@@ -1,1 +1,0 @@
-javac ./tage/Camera.java
