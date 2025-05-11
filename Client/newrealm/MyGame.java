@@ -503,7 +503,6 @@ public class MyGame extends VariableFrameRateGame
 				if (locState != 0){
 					x = i - (mm.getMapWidth(1)/2);
 					y = j- (mm.getMapHeight(1)/2);
-				}
 				if (locState == 1 || locState == 8 || locState == 9){
 					Entity wall = new Entity();
 					if (locState == 8){ //Windowed Wall
@@ -657,6 +656,7 @@ public class MyGame extends VariableFrameRateGame
 				}
 				
 				entityListSize++;
+				}
 			}
 		}
 		x = (mm.getPlayerLocation(mapID)[0] - (mm.getMapWidth(1)/2));
@@ -1185,7 +1185,7 @@ public class MyGame extends VariableFrameRateGame
 			for (int j = 0; j < manifold.getNumContacts(); j++)
 			{	contactPoint = manifold.getContactPoint(j);
 				if (contactPoint.getDistance() < 0.1f)
-				{	System.out.println("---- hit between " + obj1 + " and " + obj2);
+				{	//System.out.println("---- hit between " + obj1 + " and " + obj2);
 					if (!isPlayerInvincible && (obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox)) && (obj1.getType() == "Ego" || obj2.getType() == "Ego" || obj1.getType() == "Ghoul" || obj2.getType() == "Ghoul" )){
 						if (!obj1.equals(avatarHitbox))
 							PlayerHP -= obj1.getDamage();
