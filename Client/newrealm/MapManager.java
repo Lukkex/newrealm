@@ -6,7 +6,7 @@ import tage.input.action.*;
 import net.java.games.input.Event;
 
 public class MapManager {
-    private int map1Width =  27;
+    private int map1Width =  9;
     private int map1Height = 20;
     private int map2Width = 16;
     private int map2Height = 25;
@@ -83,7 +83,6 @@ public class MapManager {
         //P is where player starts
         //@ is next level
 
-        
         char[][] temp  = {
             {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
             {1,  0,  0,  0,  'G',  0, 0, 0, 1, 0, 'G', 1, 0, 0, 0, 0, 0, 1, 0, 1},
@@ -114,20 +113,6 @@ public class MapManager {
             {1,  1,  1,  1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
         }; 
 
-        /*
-        char[][] temp  = {
-            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-            {1,  3,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  0,  1,  0,  1,  1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  0,  2,  0, 'G', 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  0,  1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1, 'P', 1,  0,  0,  0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-            {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-        };
-            map1Height = 9;
-        */
-
         char[][] perftemp  = {
             {1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
             {1,  3,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -141,7 +126,7 @@ public class MapManager {
 
         Map map1;
         if (performanceMode){
-            map1Height = 9;
+            map1Width = 9;
             map1 = new Map(1, map1Width, map1Height);
             map1.setMapLayout(perftemp);
         }
@@ -149,9 +134,7 @@ public class MapManager {
             map1 = new Map(1, map1Width, map1Height);
             map1.setMapLayout(temp);
         }
-
-        map1 = new Map(1, map1Width, map1Height);
-        map1.setMapLayout(temp);
+        map1.setMapLayout(perftemp);
 
         maps.add(new Map()); //Empty map; will make it so Map #1 is at index 1 and not 0
         maps.add(map1);

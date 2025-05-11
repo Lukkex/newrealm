@@ -501,8 +501,8 @@ public class MyGame extends VariableFrameRateGame
 
 				//Create Wall at location
 				if (locState != 0){
-					x = i - (mm.getMapWidth(1)/2);
-					y = j- (mm.getMapHeight(1)/2);
+					x = i - (mm.getMapWidth(mapID)/2);
+					y = j- (mm.getMapHeight(mapID)/2);
 				if (locState == 1 || locState == 8 || locState == 9){
 					Entity wall = new Entity();
 					if (locState == 8){ //Windowed Wall
@@ -659,8 +659,8 @@ public class MyGame extends VariableFrameRateGame
 				}
 			}
 		}
-		x = (mm.getPlayerLocation(mapID)[0] - (mm.getMapWidth(1)/2));
-		y= (mm.getPlayerLocation(mapID)[1] - (mm.getMapHeight(1)/2));
+		x = (mm.getPlayerLocation(mapID)[0] - (mm.getMapWidth(mapID)/2));
+		y= (mm.getPlayerLocation(mapID)[1] - (mm.getMapHeight(mapID)/2));
 
 		avatar.setLocalTranslation((new Matrix4f()).translation(x * mapUnitSize, 0f, y * mapUnitSize));
 	}
