@@ -504,22 +504,12 @@ public class MyGame extends VariableFrameRateGame
 					x = i - (mm.getMapWidth(1)/2);
 					y = j- (mm.getMapHeight(1)/2);
 				if (locState == 1 || locState == 8 || locState == 9){
-					Entity wall = new Entity();
+					GameObject wall = new GameObject(GameObject.root());
 					if (locState == 8){ //Windowed Wall
-						try {
-							wall = em.createEntity(entityListSize, windowS, windowtx, "Door");
-						}
-						catch (Exception e){
-							System.out.println("\nCouldn't create Entity with ID " + entityListSize);
-						}
+						wall = new GameObject(GameObject.root(), windowS, windowtx);
 					}
 					else {
-						try {
-							wall = em.createEntity(entityListSize, wallS, walltx, "Door");
-						}
-						catch (Exception e){
-							System.out.println("\nCouldn't create Entity with ID " + entityListSize);
-						}
+						wall = new GameObject(GameObject.root(), wallS, walltx);
 					}
 					
 					float[] wallVerts = wallS.getVertices();
@@ -1195,7 +1185,7 @@ public class MyGame extends VariableFrameRateGame
 						isPlayerInvincible = true; //IFrames to prevent spam damage
 					}
 					else if ((obj1.equals(avatarHitbox) || obj2.equals(avatarHitbox))){
-						avatar.setLocalLocation(previousAvatarLocation);
+						//avatar.setLocalLocation(previousAvatarLocation);
 						System.out.println("\nPlayer collided with an object!");
 					}
 					else if ((obj1.getType() == "Ghoul"  || obj2.getType() == "Ghoul" ) && (obj1.getType() == "Eye"  || obj2.getType() == "Eye" )){
