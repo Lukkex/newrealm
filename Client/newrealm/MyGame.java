@@ -497,7 +497,7 @@ public class MyGame extends VariableFrameRateGame
 			for (int j = 0; j < mm.getMapHeight(mapID); j++){
 				entityListSize = em.getEntityListSize();
 				
-				locState = mm.getMapLocationState(mapID, i, j);
+				locState = mm.getMapLocationState(mapID, i, j); 
 
 				//Create Wall at location
 				if (locState != 0){
